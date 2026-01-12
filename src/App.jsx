@@ -133,8 +133,9 @@ export default function DopamineTest() {
                 <h1 className="text-3xl font-extrabold leading-tight">{t.start?.title1 ?? "Your Dopamine Pattern?"}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">{t.start?.title2 ?? "Habit Test"}</span></h1>
                 <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">{t.start?.desc || "Check your patterns."}</p>
               </div>
-              <button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all">
-                {t.start?.btn ?? "Start Test"}
+              <button onClick={() => dispatch({ type: ACTIONS.START })} 
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-purple-400/20"
+                >{t.start?.btn ?? "Start Test"}
               </button>
               <div className="flex justify-center gap-4 text-[11px] text-gray-500 pt-2 border-t border-neutral-700/50">{t.start?.tags?.map((tag, i) => <div key={i}>{tag}</div>)}</div>
             </div>
