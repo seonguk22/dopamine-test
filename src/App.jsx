@@ -21,8 +21,15 @@ const RESULTS_META = [
   { min: 16, color: "text-red-500", border: "border-red-500/50", bg: "from-red-500/10", marker: "bg-red-500" }
 ];
 
+// 1. 테스트용 URL 파라미터 감지 기능이 추가된 언어 설정
 const getInitialLang = () => {
   if (typeof window === 'undefined') return 'en';
+  
+  // URL에 ?lang=ja 등이 있으면 우선 적용
+  const params = new URLSearchParams(window.location.search);
+  const langParam = params.get('lang');
+  if (langParam && TRANSLATIONS[langParam]) return langParam;
+
   const shortLang = (navigator.language || 'en').split('-')[0];
   return TRANSLATIONS[shortLang] ? shortLang : 'en';
 };
@@ -125,6 +132,41 @@ export default function DopamineTest() {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
         <div className="p-6 md:p-8 relative z-10 flex-1 flex flex-col justify-center">    
 
+          {/* 2. 복구 및 강화된 시작 화면 (Start Step) */}
+          {state.step === 'start' && (
+            <div className="text-center space-y-8 animate-in fade-in zoom-in duration-300">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-4 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                <Brain size={48} className="text-purple-400" />
+              </div>
+              <div className="space-y-3">
+                <div className="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-400 text-xs font-bold tracking-wider mb-2">
+                  {t.start?.sub || "Assessment"}
+                </div>
+                <h1 className="text-3xl font-extrabold leading-tight text-white">
+                  {t.start?.title1 ?? "Your Dopamine Pattern?"}<br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
+                    {t.start?.title2 ?? "Habit Test"}
+                  </span>
+                </h1>
+                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">{t.start?.desc || "Check your patterns."}</p>
+              </div>
+
+              {/* 확실한 가시성을 가진 버튼 디자인 */}
+              <div className="px-4">
+                <button 
+                  onClick={() => dispatch({ type: ACTIONS.START })} 
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-lg"
+                >
+                  {t.start?.btn ?? "테스트 시작하기"}
+                </button>
+              </div>
+
+              <div className="flex justify-center gap-4 text-[11px] text-gray-500 pt-2 border-t border-neutral-700/50">
+                {t.start?.tags?.map((tag, i) => <div key={i}>{tag}</div>)}
+              </div>
+            </div>
+          )}
+
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden">
@@ -195,8 +237,8 @@ export default function DopamineTest() {
                   </div>
                 </div>
                 <div className="mt-8 pt-4 border-t border-neutral-900 text-center text-[10px] text-gray-600 space-y-2">
-                   <div className="flex items-center justify-center gap-1.5"><Info size={10} /><span>{t.result?.disclaimer || "..."}</span></div>
-                   <span className="text-[9px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
+                    <div className="flex items-center justify-center gap-1.5"><Info size={10} /><span>{t.result?.disclaimer || "..."}</span></div>
+                    <span className="text-[9px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
                 </div>
               </div>
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
