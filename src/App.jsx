@@ -124,7 +124,20 @@ export default function DopamineTest() {
       <div className="max-w-md w-full min-h-screen md:min-h-[auto] bg-neutral-950 md:bg-neutral-900/50 backdrop-blur-xl md:rounded-[2.5rem] shadow-2xl border-x border-neutral-800 overflow-hidden relative flex flex-col">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
         <div className="p-6 md:p-8 relative z-10 flex-1 flex flex-col justify-center">
-     
+
+          {state.step === 'start' && (
+            <div className="text-center space-y-8 animate-in fade-in zoom-in duration-300">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-700/50 rounded-full mb-4 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]"><Brain size={48} className="text-purple-400" /></div>
+              <div className="space-y-3">
+                <div className="inline-block px-3 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-purple-400 text-xs font-bold tracking-wider mb-2">{t.start?.sub || "Assessment"}</div>
+                <h1 className="text-3xl font-extrabold leading-tight">{t.start?.title1 ?? "Your Dopamine Pattern?"}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">{t.start?.title2 ?? "Habit Test"}</span></h1>
+                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap">{t.start?.desc || "Check your patterns."}</p>
+              </div>
+              <button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all"> {t.start?.btn ?? "Start Test"} </button>
+              <div className="flex justify-center gap-4 text-[11px] text-gray-500 pt-2 border-t border-neutral-700/50">{t.start?.tags?.map((tag, i) => <div key={i}>{tag}</div>)}</div>
+            </div>
+          )}
+
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden">
