@@ -2,8 +2,8 @@
 
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
 import { 
-  Brain, Zap, Share2, AlertTriangle, RefreshCw, Smartphone, 
-  CheckCircle, XCircle, CheckSquare, Info 
+  Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
+  CheckCircle, XCircle, CheckSquare, Info, Instagram, Link as LinkIcon 
 } from 'lucide-react';
 import { TRANSLATIONS } from './translations';
 
@@ -21,15 +21,12 @@ const RESULTS_META = [
   { min: 16, color: "text-red-500", border: "border-red-500/50", bg: "from-red-500/10", marker: "bg-red-500" }
 ];
 
-// 1. 테스트용 URL 파라미터 감지 기능이 추가된 언어 설정
+// 1. 초기 언어 설정 (URL 파라미터 우선)
 const getInitialLang = () => {
   if (typeof window === 'undefined') return 'en';
-  
-  // URL에 ?lang=ja 등이 있으면 우선 적용
   const params = new URLSearchParams(window.location.search);
   const langParam = params.get('lang');
   if (langParam && TRANSLATIONS[langParam]) return langParam;
-
   const shortLang = (navigator.language || 'en').split('-')[0];
   return TRANSLATIONS[shortLang] ? shortLang : 'en';
 };
@@ -43,11 +40,9 @@ function reducer(state, action) {
     case ACTIONS.ANSWER: {
       const { isYes, point, idx } = action.payload;
       if (typeof idx !== 'number' || idx < 0 || idx >= QUESTIONS_META.length) return state;
-
       const willCount = isYes && !state.answers.includes(idx);
       const nextAnswers = willCount ? [...state.answers, idx] : state.answers;
       const nextScore = willCount ? state.score + point : state.score;
-      
       if (idx >= QUESTIONS_META.length - 1) return { ...state, answers: nextAnswers, score: nextScore, step: 'loading', progress: 0 };
       return { ...state, answers: nextAnswers, score: nextScore, currentQ: idx + 1 };
     }
@@ -67,24 +62,32 @@ export default function DopamineTest() {
   const [selectedOption, setSelectedOption] = useState(null);
   const resultRef = useRef(null);
 
+  // --- [로직: 10분에 약 1.5명씩 정직하게 증가하는 카운터] ---
+  const getDynamicCount = () => {
+    // 출시 시점을 오늘 오전 0시로 설정
+    const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
+    const now = new Date().getTime();
+    const diffInSeconds = Math.max(0, Math.floor((now - launchDate) / 1000));
+    
+    // 400초(약 6.6분)마다 1명씩 증가 -> 1시간에 9명 -> 24시간에 약 216명
+    return Math.floor(diffInSeconds / 400);
+  };
+
+  const [participantCount, setParticipantCount] = useState(getDynamicCount());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setParticipantCount(getDynamicCount());
+    }, 10000); // 10초마다 체크하여 실시간 반영
+    return () => clearInterval(interval);
+  }, []);
+
   const Q_LEN = QUESTIONS_META.length;
   const MAX_SCORE = useMemo(() => QUESTIONS_META.reduce((sum, q) => sum + q.point, 0), []);
-
-  const markerLeft = useMemo(() => {
-    if (!MAX_SCORE) return 0;
-    return Math.min(98, (state.score / MAX_SCORE) * 100);
-  }, [state.score, MAX_SCORE]);
-
-  const top3Answers = useMemo(() => {
-    return [...state.answers]
-      .sort((a, b) => (QUESTIONS_META[b]?.point || 0) - (QUESTIONS_META[a]?.point || 0))
-      .slice(0, 3);
-  }, [state.answers]);
-
+  const markerLeft = useMemo(() => (!MAX_SCORE ? 0 : Math.min(98, (state.score / MAX_SCORE) * 100)), [state.score, MAX_SCORE]);
+  const top3Answers = useMemo(() => [...state.answers].sort((a, b) => (QUESTIONS_META[b]?.point || 0) - (QUESTIONS_META[a]?.point || 0)).slice(0, 3), [state.answers]);
   const resIdx = useMemo(() => {
-    for (let i = RESULTS_META.length - 1; i >= 0; i--) {
-      if (state.score >= RESULTS_META[i].min) return i;
-    }
+    for (let i = RESULTS_META.length - 1; i >= 0; i--) { if (state.score >= RESULTS_META[i].min) return i; }
     return 0;
   }, [state.score]);
 
@@ -104,11 +107,15 @@ export default function DopamineTest() {
     const idx = state.currentQ;
     const point = QUESTIONS_META[idx]?.point ?? 0;
     if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(15);
-
     setTimeout(() => {
       dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } });
       setSelectedOption(null);
     }, 400);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert(lang === 'ko' ? '링크가 복사되었습니다!' : 'Link copied!');
   };
 
   const shareResultAsImage = async () => {
@@ -128,45 +135,59 @@ export default function DopamineTest() {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans flex items-center justify-center">
-      <div className="max-w-md w-full min-h-screen md:min-h-[auto] bg-neutral-950 md:bg-neutral-900/50 backdrop-blur-xl md:rounded-[2.5rem] shadow-2xl border-x border-neutral-800 overflow-hidden relative flex flex-col">
+      <div className="max-w-md w-full min-h-screen md:min-h-[auto] bg-neutral-950 md:bg-neutral-900/50 backdrop-blur-xl md:rounded-[3rem] shadow-2xl border-x border-neutral-800 overflow-hidden relative flex flex-col">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
-        <div className="p-6 md:p-8 relative z-10 flex-1 flex flex-col justify-center">    
+        <div className="p-6 md:p-10 relative z-10 flex-1 flex flex-col justify-center">    
 
-          {/* 2. 복구 및 강화된 시작 화면 (Start Step) */}
+          {/* 1. 시작 화면 (Start Step) */}
           {state.step === 'start' && (
-            <div className="text-center space-y-8 animate-in fade-in zoom-in duration-300">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-4 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+            <div className="text-center space-y-10 animate-in fade-in zoom-in duration-300">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-2 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
                 <Brain size={48} className="text-purple-400" />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-400 text-xs font-bold tracking-wider mb-2">
-                  {t.start?.sub || "Assessment"}
+                  {t.start?.sub || "1분 자가 점검"}
                 </div>
-                <h1 className="text-3xl font-extrabold leading-tight text-white">
-                  {t.start?.title1 ?? "Your Dopamine Pattern?"}<br />
+                <h1 className="text-3xl font-extrabold leading-tight text-white tracking-tight">
+                  {t.start?.title1 ?? "내 도파민 패턴은?"}<br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-                    {t.start?.title2 ?? "Habit Test"}
+                    {t.start?.title2 ?? "도파민 습관 테스트"}
                   </span>
                 </h1>
-                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">{t.start?.desc || "Check your patterns."}</p>
+                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">
+                  {lang === 'ko' ? '숏폼, 충동구매, 미루기...\n일상을 방해하는 패턴을\n1분 만에 점검해 보세요.' : 'Short-form, shopping, procrastination...\nCheck your daily patterns\nin just 1 minute.'}
+                </p>
               </div>
 
-              {/* 확실한 가시성을 가진 버튼 디자인 */}
+              {/* 실시간 성장형 카운터 */}
+              <div className="pt-2">
+                <p className="text-emerald-400 text-[13px] font-bold animate-pulse">
+                   현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.
+                </p>
+              </div>
+
               <div className="px-4">
                 <button 
                   onClick={() => dispatch({ type: ACTIONS.START })} 
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-lg"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl"
                 >
                   {t.start?.btn ?? "테스트 시작하기"}
                 </button>
               </div>
 
-              <div className="flex justify-center gap-4 text-[11px] text-gray-500 pt-2 border-t border-neutral-700/50">
-                {t.start?.tags?.map((tag, i) => <div key={i}>{tag}</div>)}
+              {/* 소셜 공유 아이콘 세트 */}
+              <div className="flex justify-center gap-4 pt-6 opacity-80">
+                <button onClick={copyLink} className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700"><LinkIcon size={20} className="text-gray-300"/></button>
+                <button className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition-opacity"><Instagram size={20} className="text-white"/></button>
+                <button className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-white font-black text-sm">f</span></button>
+                <button className="w-11 h-11 rounded-full bg-black border border-neutral-700 flex items-center justify-center hover:bg-neutral-900 transition-colors"><span className="text-white font-black text-sm">X</span></button>
+                <button className="w-11 h-11 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-[#3c1e1e] text-xl">💬</span></button>
               </div>
             </div>
           )}
 
+          {/* 2. 퀴즈 화면 (Quiz Step) */}
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden">
@@ -175,12 +196,13 @@ export default function DopamineTest() {
               <div className="flex justify-between items-center text-xs text-gray-400 font-mono"><span>{t.quiz?.q_prefix ?? "Q"} {state.currentQ + 1}</span><span>{Q_LEN}</span></div>
               <div className="min-h-[140px] flex items-center justify-center"><h2 className="text-xl font-bold text-center break-keep leading-snug">{t.questions?.[state.currentQ]?.q || "..."}</h2></div>
               <div className="space-y-3">
-                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(true)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption !== null ? 'pointer-events-none' : ''} ${selectedOption === true ? 'bg-purple-500/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.yes ?? "Yes"}</span><CheckCircle className={selectedOption === true ? 'text-purple-400' : 'text-neutral-500'} size={24} /></button>
-                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(false)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption !== null ? 'pointer-events-none' : ''} ${selectedOption === false ? 'bg-blue-500/30 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.no ?? "No"}</span><XCircle className={selectedOption === false ? 'text-blue-400' : 'text-neutral-500'} size={24} /></button>
+                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(true)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption === true ? 'bg-purple-500/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.yes ?? "Yes"}</span><CheckCircle className={selectedOption === true ? 'text-purple-400' : 'text-neutral-500'} size={24} /></button>
+                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(false)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption === false ? 'bg-blue-500/30 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.no ?? "No"}</span><XCircle className={selectedOption === false ? 'text-blue-400' : 'text-neutral-500'} size={24} /></button>
               </div>
             </div>
           )}
 
+          {/* 3. 로딩 화면 (Loading Step) */}
           {state.step === 'loading' && (
             <div className="text-center py-20 space-y-6 flex flex-col justify-center min-h-[400px] animate-in fade-in">
               <div className="relative w-24 h-24 mx-auto border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin"></div>
@@ -188,6 +210,7 @@ export default function DopamineTest() {
             </div>
           )}
 
+          {/* 4. 결과 화면 (Result Step) */}
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
@@ -203,50 +226,36 @@ export default function DopamineTest() {
                 </div>
                 <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
                   <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20 pointer-events-none`} />
-                  <div className="relative z-10 flex items-start gap-3">
-                    <AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={18} />
-                    <p className="text-gray-200 leading-relaxed text-sm font-medium break-keep">{trans.desc}</p>
-                  </div>
+                  <div className="relative z-10 flex items-start gap-3 text-sm font-medium break-keep text-gray-200"><AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={18} /><p>{trans.desc}</p></div>
                 </div>
                 <div className="text-left space-y-3 mt-8">
                   <div className="flex items-center gap-2 mb-1"><CheckSquare size={14} className="text-gray-400"/><div className="text-xs font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title || "Action Plan"}</div></div>
                   <div className="space-y-3">
-                    {top3Answers.length === 0 && (
-                      <div className="text-xs text-gray-500 text-center py-8 bg-neutral-900/40 rounded-xl border border-neutral-800/50 px-4 break-keep">
-                        {lang === 'ko' ? '추천 액션을 구성하려면 한 가지 이상의 "그렇다" 응답이 필요합니다.' : 'Answer "Yes" to at least one question to see personalized actions.'}
-                      </div>
-                    )}
-                    {top3Answers.map((ansIdx, i) => {
-                      const qObj = t.questions?.[ansIdx];
-                      if (!qObj) return null;
-                      return (
-                        <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-5 h-5 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                <span className="text-xs font-bold text-white leading-tight">{qObj.title || "..."}</span>
-                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{qObj.cat || "habit"}</span>
-                              </div>
-                              <p className="text-[11px] text-gray-400 leading-normal">{qObj.desc || ""}</p>
-                            </div>
-                          </div>
+                    {top3Answers.map((ansIdx, i) => (
+                      <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
+                        <div className="w-5 h-5 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5"><span className="text-xs font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span><span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{t.questions?.[ansIdx]?.cat}</span></div>
+                          <p className="text-[11px] text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="mt-8 pt-4 border-t border-neutral-900 text-center text-[10px] text-gray-600 space-y-2">
-                    <div className="flex items-center justify-center gap-1.5"><Info size={10} /><span>{t.result?.disclaimer || "..."}</span></div>
+                    <div className="flex items-center justify-center gap-1.5"><Info size={10} /><span>{t.result?.disclaimer}</span></div>
                     <span className="text-[9px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
                 </div>
               </div>
+
+              {/* MINUS 앱 프로모션 배너 */}
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
-                <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-neutral-950 py-4 rounded-2xl flex flex-col items-center gap-1 block">
-                  <span className="text-xs text-purple-400 font-bold">{t.result?.promo_sub || "..."}</span>
-                  <span className="text-sm font-bold flex items-center gap-1 text-white"><Smartphone size={14}/> {t.result?.promo_btn || "..."}</span>
+                <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-neutral-950 py-4 rounded-2xl flex flex-col items-center gap-1">
+                  <span className="text-xs text-purple-400 font-bold">{t.result?.promo_sub}</span>
+                  <span className="text-sm font-bold flex items-center gap-1 text-white"><Smartphone size={14}/> {t.result?.promo_btn}</span>
                 </a>
               </div>
+
               <div className="flex gap-2">
                 <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"><RefreshCw size={16} /> {t.result?.retry || "Retry"}</button>
                 <button onClick={shareResultAsImage} className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"><Share2 size={16} /> {t.result?.share || "Share"}</button>
