@@ -121,20 +121,23 @@ export default function DopamineTest() {
   };
 
   const shareToKakao = () => {
-    initKakao();
-    if (window.Kakao && window.Kakao.isInitialized()) {
-      window.Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: `내 도파민 결과: ${trans.title}`, 
-          description: `제 민감도는 [${trans.label}] 수준이네요! 여러분의 패턴도 1분 만에 확인해보세요.`,
-          imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
-          link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-        },
-        buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
-      });
-    } else { shareViaWebAPI(); }
-  };
+  initKakao();
+  if (window.Kakao && window.Kakao.isInitialized()) {
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: `내 도파민 결과: ${trans.title}`, 
+        description: `당신의 뇌도 자극에 중독되어 있나요? 지금 바로 확인해보세요.`,
+        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png', // 결과별 이미지가 있다면 더 좋음
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+      },
+      buttons: [{ 
+        title: '나도 측정해보기', // 클릭 유도 버튼
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href } 
+      }],
+    });
+  } else { shareViaWebAPI(); }
+};
 
   const shareSNS = (platform) => {
     const url = encodeURIComponent(window.location.href);
@@ -162,15 +165,45 @@ export default function DopamineTest() {
     try {
       const htmlToImage = await import('html-to-image');
       if (!resultRef.current) return;
-      const dataUrl = await htmlToImage.toPng(resultRef.current, { backgroundColor: '#0a0a0a', pixelRatio: 2 });
+
+      // 1. 고화질 이미지 생성 (S21 울트라 대응 pixelRatio: 2)
+      const dataUrl = await htmlToImage.toPng(resultRef.current, { 
+        backgroundColor: '#0a0a0a', 
+        pixelRatio: 2 
+      });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'result.png', { type: 'image/png' });
+
+      // 2. 공유할 텍스트 및 링크 준비
+      const shareUrl = window.location.href;
+      const shareText = `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`;
+
+      // 3. Web Share API 시도 (이미지 + 텍스트 + 링크 통합)
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: t.start?.title2 ?? "Result" });
+        await navigator.share({ 
+          files: [file], 
+          title: t.start?.title2 || "도파민 습관 테스트",
+          text: shareText,
+          url: shareUrl 
+        });
       } else {
-        const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
+        // 4. 지원하지 않는 환경 (PC 브라우저 등) 대비 폴백
+        // 이미지 다운로드 실행
+        const link = document.createElement('a');
+        link.download = 'dopamine_result.png';
+        link.href = dataUrl;
+        link.click();
+
+        // 동시에 주소를 클립보드에 복사 (유저가 바로 붙여넣기 할 수 있게)
+        await navigator.clipboard.writeText(shareUrl);
+        alert(lang === 'ko' 
+          ? '이미지가 저장되고 테스트 링크가 복사되었습니다! SNS에 바로 붙여넣어보세요.' 
+          : 'Image saved & Link copied!');
       }
-    } catch (e) { alert(lang === 'ko' ? '캡처에 실패했습니다.' : 'Capture failed.'); }
+    } catch (e) {
+      console.error(e);
+      alert(lang === 'ko' ? '공유에 실패했습니다.' : 'Share failed.');
+    }
   };
 
   return (
