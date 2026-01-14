@@ -159,6 +159,37 @@ export default function DopamineTest() {
     }, 400);
   };
 
+  const shareResultAsImage = async () => {
+    try {
+      // html-to-image 라이브러리가 필요합니다.
+      const htmlToImage = await import('html-to-image');
+      if (!resultRef.current) return;
+      
+      const dataUrl = await htmlToImage.toPng(resultRef.current, { 
+        backgroundColor: '#0a0a0a', 
+        pixelRatio: 2 
+      });
+      
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'result.png', { type: 'image/png' });
+      
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ 
+          files: [file], 
+          title: t.start?.title2 ?? "Dopamine Test Result" 
+        });
+      } else {
+        const link = document.createElement('a');
+        link.download = 'result.png';
+        link.href = dataUrl;
+        link.click();
+      }
+    } catch (e) {
+      console.error(e);
+      alert(lang === 'ko' ? '이미지 저장에 실패했습니다.' : 'Failed to save image.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans flex items-center justify-center">
       <div className="max-w-md w-full min-h-screen md:min-h-[auto] bg-neutral-950 md:bg-neutral-900/50 backdrop-blur-xl md:rounded-[3rem] shadow-2xl border-x border-neutral-800 overflow-hidden relative flex flex-col">
