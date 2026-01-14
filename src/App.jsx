@@ -213,10 +213,18 @@ export default function DopamineTest() {
                   <img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" />
                 </button>
 
-                {/* 4. X (SVG 반영) */}
-                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800">
-                  <img src="/icons/x_logo.svg" alt="X" className="w-6 h-6 invert" />
-                </button>
+                {/* 4. X (Official Black Background + White Logo) */}
+<button 
+  onClick={() => shareSNS('twitter')} 
+  className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800" 
+  aria-label="Share on X"
+>
+  <img 
+    src="/icons/x_logo.svg" 
+    alt="X" 
+    className="w-6 h-6 invert" // 이 invert가 검은색 로고를 공식 흰색으로 바꿔줍니다!
+  />
+</button>v
 
                 {/* 5. KakaoTalk (PNG 반영) */}
                 <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95">
