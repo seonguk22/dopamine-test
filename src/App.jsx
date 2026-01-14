@@ -3,7 +3,8 @@
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
 import { 
   Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
-  CheckCircle, XCircle, CheckSquare, Info, Instagram, Link as LinkIcon 
+  CheckCircle, XCircle, CheckSquare, Info, Instagram, Link as LinkIcon,
+  Facebook, X 
 } from 'lucide-react';
 import { TRANSLATIONS } from './translations';
 
