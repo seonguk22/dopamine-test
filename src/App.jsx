@@ -214,12 +214,34 @@ export default function DopamineTest() {
                 </button>
               </div>
 
-              <div className="flex justify-center gap-4 pt-6 opacity-80">
-                <button onClick={copyLink} className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700"><LinkIcon size={20} className="text-gray-300"/></button>
-                <button onClick={shareViaWebAPI} className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition-opacity"><Instagram size={20} className="text-white"/></button>
-                <button onClick={() => shareSNS('facebook')} className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-white font-black text-sm">f</span></button>
-                <button onClick={() => shareSNS('twitter')} className="w-11 h-11 rounded-full bg-black border border-neutral-700 flex items-center justify-center hover:bg-neutral-900 transition-colors"><span className="text-white font-black text-sm">X</span></button>
-                <button onClick={shareToKakao} className="w-11 h-11 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-[#3c1e1e] text-xl">💬</span></button>
+              <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
+                {/* 1. Link Copy (Neutral Gray) */}
+                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700 shadow-lg active:scale-95" aria-label="Copy Link">
+                  <LinkIcon size={22} className="text-gray-300"/>
+                </button>
+
+                {/* 2. Instagram (Official Gradient) - 기능 유지 */}
+                <button onClick={shareViaWebAPI} className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95" aria-label="Share on Instagram">
+                  <Instagram size={24} className="text-white"/>
+                </button>
+
+                {/* 3. Facebook (Official Blue & Icon) */}
+                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95" aria-label="Share on Facebook">
+                  <Facebook size={24} className="text-white" />
+                </button>
+
+                {/* 4. X (Official Black & Icon) */}
+                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800" aria-label="Share on X">
+                  <X size={22} className="text-white" />
+                </button>
+
+                {/* 5. KakaoTalk (Official Yellow & SVG Icon) - 기능 유지 */}
+                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95" aria-label="Share on KakaoTalk">
+                  {/* Official Kakao SVG Icon */}
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3C6.48 3 2 6.58 2 11C2 13.85 3.7 16.38 6.33 17.8C6.13 18.5 5.74 19.95 5.34 21.41C5.24 21.75 5.61 22.04 5.9 21.84C7.58 20.73 9.67 19.36 10.57 18.8C11.04 18.86 11.52 18.9 12 18.9C17.52 18.9 22 15.32 22 11C22 6.58 17.52 3 12 3Z" fill="#3C1E1E"/>
+                  </svg>
+                </button>
               </div>
             </div>
           )}
