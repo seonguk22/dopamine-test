@@ -1,5 +1,6 @@
 'use client';
 
+import { Analytics } from '@vercel/analytics/react';
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
 import { 
   Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
@@ -298,6 +299,7 @@ export default function DopamineTest() {
           )}
         </div>
       </div>
+     <Analytics />
     </div>
   );
 }
