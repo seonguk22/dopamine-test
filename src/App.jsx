@@ -356,9 +356,22 @@ export default function DopamineTest() {
 </a>
     </div>
     <div className="flex gap-2">
-      <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors"><RefreshCw size={18} /> {t.retry || "Retry"}</button>
-      <button onClick={shareResultAsImage} className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"><Share2 size={18} /> {t.share || "Share"}</button>
-    </div>
+  {/* t.retry -> t.result?.retry 로 수정 */}
+  <button 
+    onClick={() => dispatch({ type: ACTIONS.RESET })} 
+    className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors"
+  >
+    <RefreshCw size={18} /> {t.result?.retry || "Retry"}
+  </button>
+
+  {/* t.share -> t.result?.share 로 수정 */}
+  <button 
+    onClick={shareResultAsImage} 
+    className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"
+  >
+    <Share2 size={18} /> {t.result?.share || "Share"}
+  </button>
+</div>
   </div>
 )}
         </div>
