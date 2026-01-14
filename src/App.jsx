@@ -128,6 +128,7 @@ export default function DopamineTest() {
       const htmlToImage = await import('html-to-image');
       // ✅ 캡처 대상을 요약 카드(shareCardRef)로 변경
       if (!shareCardRef.current) return;
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
         backgroundColor: '#0a0a0a', 
@@ -284,28 +285,43 @@ export default function DopamineTest() {
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               <div 
       ref={shareCardRef} 
-      className="fixed -left-[9999px] top-0 bg-neutral-950 p-10 w-[500px] flex flex-col items-center justify-center space-y-8"
-      style={{ minHeight: '500px' }}
+      className="fixed flex flex-col items-center justify-center space-y-8"
+      style={{ 
+        left: '-9999px',     // 화면 밖 배치
+        top: '0', 
+        width: '500px',      // 캡처용 고정 너비
+        minHeight: '500px',  // 캡처용 고정 높이 (1:1 비율)
+        backgroundColor: '#0a0a0a', // ✅ 배경색 명시 (검은 화면 방지)
+        color: 'white',      // ✅ 글자색 명시
+        padding: '40px',
+        zIndex: -100         // 레이어 우선순위 조정
+      }}
     >
-      <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50">
+      <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50" style={{ backgroundColor: '#262626' }}>
         <Brain size={40} className="text-purple-400" />
       </div>
+      
       <div className="text-center space-y-3">
-        <span className={`text-sm font-black tracking-widest uppercase ${meta.color}`}>
+        <span className={`text-sm font-black tracking-widest uppercase ${meta.color}`} style={{ display: 'block' }}>
           {t.result?.label} {trans.label}
         </span>
         <h2 className={`text-5xl font-black ${meta.color} leading-tight`}>
           {trans.title}
         </h2>
       </div>
-      <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800">
+
+      <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800" style={{ backgroundColor: '#171717' }}>
         <div className={`h-full ${meta.marker}`} style={{ width: `${markerLeft}%` }} />
       </div>
-      <p className="text-gray-300 text-xl font-medium text-center break-keep leading-relaxed px-4">
+
+      <p className="text-gray-300 text-xl font-medium text-center break-keep leading-relaxed px-4" style={{ color: '#d4d4d4' }}>
         {trans.desc}
       </p>
-      <div className="pt-6 border-t border-neutral-900 w-full text-center">
-        <span className="text-sm text-purple-500 font-mono tracking-tighter">dopamine-test-alpha.vercel.app</span>
+
+      <div className="pt-6 border-t border-neutral-900 w-full text-center" style={{ borderTopColor: '#171717' }}>
+        <span className="text-sm text-purple-500 font-mono tracking-tighter" style={{ color: '#a855f7' }}>
+          dopamine-test-alpha.vercel.app
+        </span>
       </div>
     </div>
               
