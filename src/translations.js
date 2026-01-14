@@ -102,7 +102,7 @@ export const TRANSLATIONS = {
     ],
     levels: [
       { title: "Saubere Zone 🟦", label: "Sehr niedrig", desc: "Gute Arbeit! Sie behalten Ihren Rhythmus bei." },
-      { title: "Stabiler Fokus 🟩", label: "Niedrig", desc: "Allgeme인 ausgewogen. Achten Sie auf sich." },
+      { title: "Stabiler Fokus 🟩", label: "Niedrig", desc: "Allgemein ausgewogen. Achten Sie auf sich." },
       { title: "Dopamin-Warnung 🟨", label: "Warnung", desc: "Unbewusstes Checken nimmt zu. Zeit für Anpassung." },
       { title: "Überstimuliert 🟧", label: "Hoch", desc: "Gehirn ist an Reize gewöhnt. Detox nötig." },
       { title: "Reset erforderlich 🟥", label: "Sehr hoch", desc: "Wille allein reicht nicht. Sperre nötig." }
