@@ -70,7 +70,6 @@ export default function DopamineTest() {
   };
 
   const [participantCount, setParticipantCount] = useState(getDynamicCount());
-
   useEffect(() => {
     const interval = setInterval(() => setParticipantCount(getDynamicCount()), 10000);
     return () => clearInterval(interval);
@@ -83,7 +82,6 @@ export default function DopamineTest() {
       }
     }
   };
-
   useEffect(() => { initKakao(); }, []);
 
   const MAX_SCORE = useMemo(() => QUESTIONS_META.reduce((sum, q) => sum + q.point, 0), []);
@@ -109,72 +107,108 @@ export default function DopamineTest() {
     alert(lang === 'ko' ? '링크가 복사되었습니다!' : 'Link copied!');
   };
 
-  const shareViaWebAPI = async () => {
+  // ✅ 공유 기능 통합: 시작(링크) vs 결과(결과 텍스트 포함)
+  const shareViaWebAPI = async (forceLink = false) => {
+    const isResult = state.step === 'result' && !forceLink;
+    const shareUrl = window.location.href;
+    const shareTitle = t.start?.title2 || "도파민 습관 테스트";
+    const shareText = isResult 
+      ? `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`
+      : t.start?.desc;
+
     if (navigator.share) {
       try {
-        await navigator.share({ 
-          title: `도파민 테스트 결과: ${trans.title}`, 
-          text: `제 도파민 민감도는 [${trans.label}]입니다. 여러분도 측정해보세요!`, 
-          url: window.location.href 
-        });
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
       } catch (e) { if (e.name !== 'AbortError') copyLink(); }
     } else { copyLink(); }
   };
 
   const shareToKakao = async () => {
-  initKakao();
-  if (window.Kakao && window.Kakao.isInitialized()) {
-    try {
-      const htmlToImage = await import('html-to-image');
-      // ✅ 캡처 대상을 요약 카드(shareCardRef)로 변경
-      if (!shareCardRef.current) return;
-      await new Promise(resolve => setTimeout(resolve, 150));
+    initKakao();
+    
+    // 카카오 SDK가 로드되지 않았을 경우 폴백
+    if (!window.Kakao || !window.Kakao.isInitialized()) {
+      return shareViaWebAPI(true);
+    }
 
-      const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
-        backgroundColor: '#0a0a0a', 
-        pixelRatio: 2 
-      });
+    // 1. 결과 화면일 때: 이미지 캡처 후 업로드 공유
+    if (state.step === 'result') {
+      try {
+        const htmlToImage = await import('html-to-image');
+        
+        // 렌더링 대기 (검은 화면 방지)
+        await new Promise(resolve => setTimeout(resolve, 200));
 
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'result_summary.png', { type: 'image/png' });
-      
-      const uploadRes = await window.Kakao.Share.uploadImage({ file: [file] });
-      const sharedImageUrl = uploadRes.infos.original.url;
+        if (!shareCardRef.current) return;
 
-      window.Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: `내 도파민 결과: ${trans.title}`,
-          description: `제 민감도는 [${trans.label}] 수준이네요! 1분 만에 확인해보세요.`,
-          imageUrl: sharedImageUrl,
-          imageWidth: uploadRes.infos.original.width,
-          imageHeight: uploadRes.infos.original.height,
-          link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-        },
-        buttons: [
-          {
-            title: '나도 테스트 하기',
+        const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
+          backgroundColor: '#0a0a0a', 
+          pixelRatio: 2,
+          cacheBust: true
+        });
+
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], 'result.png', { type: 'image/png' });
+        const uploadRes = await window.Kakao.Share.uploadImage({ file: [file] });
+
+        window.Kakao.Share.sendDefault({
+          objectType: 'feed',
+          content: {
+            title: `내 도파민 결과: ${trans.title}`,
+            description: `여러분의 패턴도 1분 만에 확인해보세요!`,
+            imageUrl: uploadRes.infos.original.url,
+            imageWidth: uploadRes.infos.original.width,
+            imageHeight: uploadRes.infos.original.height,
             link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
           },
-        ],
-      });
-    } catch (e) {
-      console.error('공유 실패:', e);
-      shareViaWebAPI();
+          buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
+        });
+        return; // 결과 공유 완료 후 종료
+      } catch (e) {
+        console.error('결과 공유 실패:', e);
+      }
     }
-  } else {
-    shareViaWebAPI();
-  }
-};
+
+    // 2. 시작 화면일 때 (또는 결과 공유 실패 시): 단순 링크 공유
+    // 시작 화면에서는 shareCardRef가 null이므로 캡처 로직을 타지 않고 바로 일로 넘어옵니다.
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: t.start?.title2 || "도파민 습관 테스트",
+        description: t.start?.desc || "나의 도파민 지수는 얼마일까?",
+        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png', // 미리 준비한 썸네일
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+      },
+      buttons: [{ 
+        title: '테스트 시작하기', 
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href } 
+      }],
+    });
+  };
 
   const shareSNS = (platform) => {
-    const url = encodeURIComponent(window.location.href);
-    const resultText = `내 도파민 테스트 결과는 [${trans.title}]! 당신의 패턴은 어떤가요?`;
+    // 1. 결과 화면일 경우 URL 뒤에 파라미터를 붙여 페이스북이 '다른 페이지'로 인식하게 함
+    const shareUrl = state.step === 'result' 
+      ? `${window.location.origin}${window.location.pathname}?res=${resIdx}`
+      : window.location.href;
+      
+    const url = encodeURIComponent(shareUrl);
+    const isResult = state.step === 'result';
+    
+    // X(트위터)는 텍스트를 받으므로 유지
+    const resultText = isResult 
+      ? `${t.result?.share_msg} [${trans.title}]! ${t.result?.share_suffix}`
+      : (t.start?.title2 || "도파민 습관 테스트");
     const text = encodeURIComponent(resultText);
 
-    if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-    else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-    else shareViaWebAPI();
+    if (platform === 'facebook') {
+      // ✅ 페이스북은 shareUrl에 결과 파라미터를 담아 보냄
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+    } else {
+      shareViaWebAPI(true);
+    }
   };
 
   const handleAnswerClick = (isYes) => {
@@ -193,45 +227,20 @@ export default function DopamineTest() {
     try {
       const htmlToImage = await import('html-to-image');
       if (!resultRef.current) return;
-
-      // 1. 고화질 이미지 생성 (S21 울트라 대응 pixelRatio: 2)
-      const dataUrl = await htmlToImage.toPng(resultRef.current, { 
-        backgroundColor: '#0a0a0a', 
-        pixelRatio: 2 
-      });
+      const dataUrl = await htmlToImage.toPng(resultRef.current, { backgroundColor: '#0a0a0a', pixelRatio: 2 });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'result.png', { type: 'image/png' });
-
-      // 2. 공유할 텍스트 및 링크 준비
       const shareUrl = window.location.href;
       const shareText = `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`;
 
-      // 3. Web Share API 시도 (이미지 + 텍스트 + 링크 통합)
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ 
-          files: [file], 
-          title: t.start?.title2 || "도파민 습관 테스트",
-          text: shareText,
-          url: shareUrl 
-        });
+        await navigator.share({ files: [file], title: t.start?.title2, text: shareText, url: shareUrl });
       } else {
-        // 4. 지원하지 않는 환경 (PC 브라우저 등) 대비 폴백
-        // 이미지 다운로드 실행
-        const link = document.createElement('a');
-        link.download = 'dopamine_result.png';
-        link.href = dataUrl;
-        link.click();
-
-        // 동시에 주소를 클립보드에 복사 (유저가 바로 붙여넣기 할 수 있게)
+        const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
         await navigator.clipboard.writeText(shareUrl);
-        alert(lang === 'ko' 
-          ? '이미지가 저장되고 테스트 링크가 복사되었습니다! SNS에 바로 붙여넣어보세요.' 
-          : 'Image saved & Link copied!');
+        alert(lang === 'ko' ? '이미지 저장 및 링크가 복사되었습니다!' : 'Image saved & Link copied!');
       }
-    } catch (e) {
-      console.error(e);
-      alert(lang === 'ko' ? '공유에 실패했습니다.' : 'Share failed.');
-    }
+    } catch (e) { alert(lang === 'ko' ? '공유에 실패했습니다.' : 'Share failed.'); }
   };
 
   return (
@@ -253,11 +262,11 @@ export default function DopamineTest() {
               <div className="pt-2"><p className="text-emerald-400 text-[13px] font-bold animate-pulse">현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.</p></div>
               <div className="px-4"><button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl">{t.start?.btn}</button></div>
               <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
-                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700 shadow-lg active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
-                <button onClick={shareViaWebAPI} className="w-12 h-12 rounded-full bg-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
-                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
-                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
-                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
+                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
+                <button onClick={() => shareViaWebAPI(true)} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
+                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
+                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
+                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
               </div>
             </div>
           )}
@@ -283,48 +292,16 @@ export default function DopamineTest() {
 
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
-              <div 
-      ref={shareCardRef} 
-      className="fixed flex flex-col items-center justify-center space-y-8"
-      style={{ 
-        left: '-9999px',     // 화면 밖 배치
-        top: '0', 
-        width: '500px',      // 캡처용 고정 너비
-        minHeight: '500px',  // 캡처용 고정 높이 (1:1 비율)
-        backgroundColor: '#0a0a0a', // ✅ 배경색 명시 (검은 화면 방지)
-        color: 'white',      // ✅ 글자색 명시
-        padding: '40px',
-        zIndex: -100         // 레이어 우선순위 조정
-      }}
-    >
-      <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50" style={{ backgroundColor: '#262626' }}>
-        <Brain size={40} className="text-purple-400" />
-      </div>
-      
-      <div className="text-center space-y-3">
-        <span className={`text-sm font-black tracking-widest uppercase ${meta.color}`} style={{ display: 'block' }}>
-          {t.result?.label} {trans.label}
-        </span>
-        <h2 className={`text-5xl font-black ${meta.color} leading-tight`}>
-          {trans.title}
-        </h2>
-      </div>
-
-      <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800" style={{ backgroundColor: '#171717' }}>
-        <div className={`h-full ${meta.marker}`} style={{ width: `${markerLeft}%` }} />
-      </div>
-
-      <p className="text-gray-300 text-xl font-medium text-center break-keep leading-relaxed px-4" style={{ color: '#d4d4d4' }}>
-        {trans.desc}
-      </p>
-
-      <div className="pt-6 border-t border-neutral-900 w-full text-center" style={{ borderTopColor: '#171717' }}>
-        <span className="text-sm text-purple-500 font-mono tracking-tighter" style={{ color: '#a855f7' }}>
-          dopamine-test-alpha.vercel.app
-        </span>
-      </div>
-    </div>
               
+              {/* ✨ 캡처 전용 숨겨진 요약 카드 (검은 화면 방지) */}
+              <div ref={shareCardRef} className="fixed flex flex-col items-center justify-center space-y-8" style={{ left: '-9999px', top: '0', width: '500px', height: '500px', backgroundColor: '#0a0a0a', zIndex: -1 }}>
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50" style={{ backgroundColor: '#262626' }}><Brain size={40} className="text-purple-400" /></div>
+                <div className="text-center space-y-3"><span className={`text-sm font-black tracking-widest uppercase ${meta.color}`} style={{ display: 'block' }}>{t.result?.label} {trans.label}</span><h2 className={`text-5xl font-black ${meta.color} leading-tight`}>{trans.title}</h2></div>
+                <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800" style={{ backgroundColor: '#171717' }}><div className={`h-full ${meta.marker}`} style={{ width: `${markerLeft}%` }} /></div>
+                <p className="text-gray-300 text-xl font-medium text-center break-keep leading-relaxed px-4" style={{ color: '#d4d4d4' }}>{trans.desc}</p>
+                <div className="pt-6 border-t border-neutral-900 w-full text-center" style={{ borderTopColor: '#171717' }}><span className="text-sm text-purple-500 font-mono tracking-tighter" style={{ color: '#a855f7' }}>dopamine-test-alpha.vercel.app</span></div>
+              </div>
+
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4">
                   <div className="flex flex-col items-center justify-center gap-1">
@@ -354,44 +331,32 @@ export default function DopamineTest() {
                     ))}
                   </div>
                 </div>
-                {/* Designed by Windvane 바로 위에 주소 추가 */}
-<div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
-    <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
-      <Info size={12} /><span>{t.result?.disclaimer}</span>
-    </div>
-    
-    {/* ✅ 이미지 캡처 시 함께 저장될 URL 문구 */}
-    <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800">
-      <span className="text-[10px] text-purple-400 font-mono tracking-tighter">
-        dopamine-test-alpha.vercel.app
-      </span>
-    </div>
-
-    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">
-      Designed by Windvane
-    </span>
-</div>
-              </div>
-
-              {/* ✨ 1. 친구들에게 결과 공유하기 (SNS 버튼 모음) */}
-              <div className="space-y-4 pt-8 pb-4">
-                <p className="text-sm text-gray-400 font-bold tracking-tight text-center">{t.result?.share_title}</p>
-                <div className="flex justify-center gap-4">
-                  <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 shadow-lg active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
-                  <button onClick={shareResultAsImage} className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
-                  <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
-                  <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 shadow-lg active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
-                  <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center shadow-lg active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
+                <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
+                    <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter">dopamine-test-alpha.vercel.app</span></div>
+                    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
                 </div>
               </div>
 
-              {/* 🎯 2. MINUS 앱 홍보 (인디고 강조 버튼) */}
-              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg mt-4 transition-all active:scale-95 text-white">
+              {/* ✨ 1. 결과 화면 전용 SNS 공유 섹션 */}
+              <div className="space-y-4 pt-8 pb-4">
+                <p className="text-sm text-gray-400 font-bold tracking-tight text-center">{t.result?.share_title}</p>
+                <div className="flex justify-center gap-4">
+                  <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
+                  <button onClick={shareResultAsImage} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
+                  <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
+                  <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
+                  <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
+                </div>
+              </div>
+
+              {/* 🎯 2. MINUS 앱 홍보 */}
+              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg shadow-indigo-500/20">
                 <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
                 <span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span>
               </a>
 
-              {/* 🔄 3. 다시하기 버튼 (최하단 유틸리티) */}
+              {/* 🔄 3. 다시하기 버튼 */}
               <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 transition-colors active:scale-95">
                 <RefreshCw size={18} /> {t.result?.retry || "Retry"}
               </button>
