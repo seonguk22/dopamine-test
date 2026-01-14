@@ -111,7 +111,11 @@ export default function DopamineTest() {
   const shareViaWebAPI = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: t.start?.title2 || 'Dopamine Test', text: '내 도파민 패턴은?', url: window.location.href });
+        await navigator.share({ 
+          title: `도파민 테스트 결과: ${trans.title}`, 
+          text: `제 도파민 민감도는 [${trans.label}]입니다. 여러분도 측정해보세요!`, 
+          url: window.location.href 
+        });
       } catch (e) { if (e.name !== 'AbortError') copyLink(); }
     } else { copyLink(); }
   };
@@ -122,19 +126,21 @@ export default function DopamineTest() {
       window.Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
-          title: t.start?.title2 || '도파민 습관 테스트',
-          description: '내 도파민 패턴은? 1분 만에 확인하고 오늘의 액션 플랜을 받아보세요.',
+          title: `내 도파민 결과: ${trans.title}`, 
+          description: `제 민감도는 [${trans.label}] 수준이네요! 여러분의 패턴도 1분 만에 확인해보세요.`,
           imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
           link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
         },
-        buttons: [{ title: '테스트 하러가기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
+        buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
       });
     } else { shareViaWebAPI(); }
   };
 
   const shareSNS = (platform) => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(t.start?.title2 || '도파민 습관 테스트');
+    const resultText = `내 도파민 테스트 결과는 [${trans.title}]! 당신의 패턴은 어떤가요?`;
+    const text = encodeURIComponent(resultText);
+
     if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
     else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
     else shareViaWebAPI();
@@ -251,7 +257,7 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              {/* ✨ 1. 친구들에게 결과 자랑하기 (SNS 버튼 모음) */}
+              {/* ✨ 1. 친구들에게 결과 공유하기 (SNS 버튼 모음) */}
               <div className="space-y-4 pt-8 pb-4">
                 <p className="text-sm text-gray-400 font-bold tracking-tight text-center">{t.result?.share_title}</p>
                 <div className="flex justify-center gap-4">
