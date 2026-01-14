@@ -4,7 +4,7 @@ export const TRANSLATIONS = {
     start: { sub: "1분 자가 점검", title1: "내 도파민 패턴은?", title2: "도파민 습관 테스트", desc: "숏폼, 충동구매, 미루기... 일상을 방해하는 패턴을 1분 만에 점검해 보세요.", btn: "테스트 시작하기", tags: ["1분 소요", "개인정보 수집 없음", "결과 바로 확인"] },
     quiz: { yes: "그렇다", no: "아니다", q_prefix: "질문" },
     loading: { title: "패턴을 분석 중...", desc: "당신의 습관 패턴을 정밀하게 확인하고 있어요." },
-    result: { label: "자극 민감도", action_title: "바로 실행할 행동 3가지", disclaimer: "이 테스트는 자기 점검용이며 의학적 진단이 아닙니다.", promo_sub: "더 강력한 해결책이 필요하다면?", promo_btn: "MINUS 앱 시작하기", retry: "다시하기", share: "결과 공유" },
+    result: { label: "자극 민감도", action_title: "바로 실행할 행동 3가지", share_title: "✨ 친구들에게 결과 공유하기",disclaimer: "이 테스트는 자기 점검용이며 의학적 진단이 아닙니다.", promo_sub: "더 강력한 해결책이 필요하다면?", promo_btn: "MINUS 앱 시작하기", retry: "다시하기", share: "결과 공유" },
     questions: [
       { q: "최근 2주 동안, 기상 후 5분 안에 스마트폰을 확인한 적이 있다.", cat: "수면/기상", title: "기상 후 10분 무폰", desc: "알람 끄자마자 앱을 열기 대신, 물 한 잔으로 시작해보세요." },
       { q: "최근 2주 동안, 알림이 오면 하던 일을 멈추고 바로 확인한 적이 있다.", cat: "집중력", title: "알림은 필수만", desc: "알림이 많을수록 집중이 잘게 쪼개져요. 꼭 필요한 것만 남기세요." },
@@ -31,7 +31,7 @@ export const TRANSLATIONS = {
     start: { sub: "1-min Assessment", title1: "Your Dopamine Pattern?", title2: "Dopamine Habit Test", desc: "Check your focus patterns in just 1 minute.", btn: "Start Test", tags: ["1 min", "No data collection", "Instant result"] },
     quiz: { yes: "Yes", no: "No", q_prefix: "Question" },
     loading: { title: "Analyzing patterns...", desc: "Identifying your digital habit loops." },
-    result: { label: "Sensitivity", action_title: "3 Action Plans for Today", disclaimer: "Self-assessment only.", promo_sub: "Need a more powerful solution?", promo_btn: "Start MINUS App", retry: "Retry", share: "Share Result" },
+    result: { label: "Sensitivity", action_title: "3 Action Plans for Today", share_title: "✨ Share with friends", disclaimer: "Self-assessment only.", promo_sub: "Need a more powerful solution?", promo_btn: "Start MINUS App", retry: "Retry", share: "Share Result" },
     questions: [
       { q: "In the past 2 weeks, have you checked your phone within 5 mins of waking up?", cat: "Sleep", title: "10-min Phone-free Wakeup", desc: "Start with water instead of apps." },
       { q: "In the past 2 weeks, have you stopped tasks to check notifications?", cat: "Focus", title: "Essential Alerts Only", desc: "Keep only critical alerts to maintain focus." },
@@ -58,7 +58,7 @@ export const TRANSLATIONS = {
     start: { sub: "1分診断", title1: "あなたの依存度は？", title2: "習慣チェックテスト", desc: "日常を邪魔する習慣を1分でチェックしましょう。", btn: "診断を始める", tags: ["1分で完了", "個人情報収集なし", "即時診断"] },
     quiz: { yes: "はい", no: "いいえ", q_prefix: "質問" },
     loading: { title: "パターン分析中...", desc: "あなたのデジタル習慣を特定しています." },
-    result: { label: "感受性", action_title: "今日から実践すべき3つの行動", disclaimer: "この診断は自己チェック用です.", promo_sub: "もっと強力な対策が必要なら？", promo_btn: "MINUSアプリを試す", retry: "やり直す", share: "結果を共有" },
+    result: { label: "感受性", action_title: "今日から実践すべき3つの行動", share_title: "✨ 友達に結果を共有する",disclaimer: "この診断は自己チェック用です.", promo_sub: "もっと強力な対策が必要なら？", promo_btn: "MINUSアプリを試す", retry: "やり直す", share: "結果を共有" },
     questions: [
       { q: "直近2週間で、起床後5分以内にスマホをチェックしましたか？", cat: "睡眠", title: "起床後10分ノー・スマホ", desc: "アプリの代わりに、まず一杯の水から始めましょう." },
       { q: "直近2週間で、通知が来るとすぐに確認してしまいますか？", cat: "集中力", title: "通知は必須のみに", desc: "通知를 最小限にして、深い集中を守りましょう." },
@@ -85,7 +85,7 @@ export const TRANSLATIONS = {
     start: { sub: "1-Min-Check", title1: "Dopamin-Muster?", title2: "Gewohnheits-Test", desc: "Überprüfe deinen Fokus in nur 1 Minute.", btn: "Starten", tags: ["1 Min.", "Kein Tracking", "Ergebnis"] },
     quiz: { yes: "Ja", no: "Nein", q_prefix: "Frage" },
     loading: { title: "Wird analysiert...", desc: "Identifiziere deine digitalen Gewohnheiten." },
-    result: { label: "Sensibilität", action_title: "3 Pläne für heute", disclaimer: "Nur zur Selbsteinschätzung.", promo_sub: "Stärkere Lösung?", promo_btn: "MINUS App", retry: "Wiederholen", share: "Teilen" },
+    result: { label: "Sensibilität", action_title: "3 Pläne für heute", share_title: "✨ Ergebnis mit Freunden teilen",disclaimer: "Nur zur Selbsteinschätzung.", promo_sub: "Stärkere Lösung?", promo_btn: "MINUS App", retry: "Wiederholen", share: "Teilen" },
     questions: [
       { q: "In den letzten 2 Wochen innerhalb von 5 Min. nach dem Aufwachen das Handy gecheckt?", cat: "Schlaf", title: "10 Min. handyfrei", desc: "Starten Sie mit Wasser statt mit Apps." },
       { q: "In den letzten 2 Wochen Aufgaben sofort unterbrochen, um Mitteilungen zu prüfen?", cat: "Fokus", title: "Nur Wichtiges", desc: "Deaktivieren Sie Unwichtiges für tiefen Fokus." },
@@ -112,7 +112,7 @@ export const TRANSLATIONS = {
     start: { sub: "Test de 1 min", title1: "¿Tu patrón de dopamina?", title2: "Test de hábitos", desc: "Analiza tu enfoque en solo 1 minuto.", btn: "Iniciar", tags: ["1 min", "Sin rastreo", "Resultado"] },
     quiz: { yes: "Sí", no: "No", q_prefix: "Pregunta" },
     loading: { title: "Analizando...", desc: "Identificando tus bucles digitales." },
-    result: { label: "Sensibilidad", action_title: "3 planes para hoy", disclaimer: "Solo autoevaluación.", promo_sub: "¿Buscas algo más fuerte?", promo_btn: "App MINUS", retry: "Reintentar", share: "Compartir" },
+    result: { label: "Sensibilidad", action_title: "3 planes para hoy", share_title: "✨ Comparte el resultado con amigos",disclaimer: "Solo autoevaluación.", promo_sub: "¿Buscas algo más fuerte?", promo_btn: "App MINUS", retry: "Reintentar", share: "Compartir" },
     questions: [
       { q: "En las últimas 2 semanas, ¿miraste el móvil tras despertar?", cat: "Sueño", title: "10 min sin móvil al despertar", desc: "Empieza con agua en lugar de con apps." },
       { q: "En las últimas 2 semanas, ¿interrumpes tareas por notificaciones?", cat: "Foco", title: "Alertas críticas", desc: "Mantén solo lo esencial para tu enfoque." },
@@ -139,7 +139,7 @@ export const TRANSLATIONS = {
     start: { sub: "Test de 1 min", title1: "Votre profil dopamine ?", title2: "Test d'habitudes", desc: "Vérifiez votre concentration en 1 minute.", btn: "Démarrer", tags: ["1 min", "Anonyme", "Résultat"] },
     quiz: { yes: "Oui", no: "Non", q_prefix: "Question" },
     loading: { title: "Analyse...", desc: "Identification de vos habitudes." },
-    result: { label: "Sensibilité", action_title: "3 actions aujourd'hui", disclaimer: "Auto-évaluation uniquement.", promo_sub: "Solution plus forte ?", promo_btn: "App MINUS", retry: "Réessayer", share: "Partager" },
+    result: { label: "Sensibilité", action_title: "3 actions aujourd'hui", share_title: "✨ Partager avec vos amis",disclaimer: "Auto-évaluation uniquement.", promo_sub: "Solution plus forte ?", promo_btn: "App MINUS", retry: "Réessayer", share: "Partager" },
     questions: [
       { q: "Au cours des 2 dernières semaines, vérifié votre tel après le réveil ?", cat: "Sommeil", title: "10 min sans tel au réveil", desc: "Commencez par un verre d'eau." },
       { q: "Au cours des 2 dernières semaines, interrompu vos tâches pour notifs ?", cat: "Focus", title: "Alertes critiques", desc: "Gardez l'essentiel pour rester concentré." },
@@ -166,7 +166,7 @@ export const TRANSLATIONS = {
     start: { sub: "Teste 1 min", title1: "Padrão de dopamina?", title2: "Teste de hábitos", desc: "Veja seu foco em apenas 1 minuto.", btn: "Iniciar", tags: ["1 min", "Sem dados", "Resultado"] },
     quiz: { yes: "Sim", no: "Não", q_prefix: "Pergunta" },
     loading: { title: "Analisando...", desc: "Identificando seus ciclos digitais." },
-    result: { label: "Sensibilidade", action_title: "3 ações para hoje", disclaimer: "Apenas autoavaliação.", promo_sub: "Algo mais forte?", promo_btn: "App MINUS", retry: "Repetir", share: "Partilhar" },
+    result: { label: "Sensibilidade", action_title: "3 ações para hoje", share_title: "✨ Partilhar com amigos",disclaimer: "Apenas autoavaliação.", promo_sub: "Algo mais forte?", promo_btn: "App MINUS", retry: "Repetir", share: "Partilhar" },
     questions: [
       { q: "Nas últimas 2 semanas, checou o celular logo após acordar?", cat: "Sono", title: "10 min sem celular", desc: "Comece com água em vez de apps." },
       { q: "Nas últimas 2 semanas, parou tarefas para ver notificações?", cat: "Foco", title: "Apenas alertas críticos", desc: "Mantenha o essencial para focar." },
@@ -193,7 +193,7 @@ export const TRANSLATIONS = {
     start: { sub: "Tes 1 Menit", title1: "Pola Dopamin Anda?", title2: "Tes Kebiasaan", desc: "Cek pola fokus Anda dalam 1 menit saja.", btn: "Mulai", tags: ["1 menit", "Tanpa data", "Instan"] },
     quiz: { yes: "Ya", no: "Tidak", q_prefix: "Pertanyaan" },
     loading: { title: "Menganalisis...", desc: "Mencari tahu pola digital Anda." },
-    result: { label: "Sensitivitas", action_title: "3 Rencana Hari Ini", disclaimer: "Hanya penilaian diri.", promo_sub: "Butuh yang lebih kuat?", promo_btn: "App MINUS", retry: "Coba Lagi", share: "Bagikan" },
+    result: { label: "Sensitivitas", action_title: "3 Rencana Hari Ini", share_title: "✨ Bagikan ke teman",disclaimer: "Hanya penilaian diri.", promo_sub: "Butuh yang lebih kuat?", promo_btn: "App MINUS", retry: "Coba Lagi", share: "Bagikan" },
     questions: [
       { q: "Dalam 2 minggu terakhir, cek HP dalam 5 menit setelah bangun?", cat: "Tidur", title: "10 Menit Tanpa HP", desc: "Mulai dengan air, bukan aplikasi." },
       { q: "Dalam 2 minggu terakhir, cek notif saat sedang bekerja?", cat: "Fokus", title: "Notif Penting Saja", desc: "Aktifkan peringatan darurat saja." },
@@ -220,7 +220,7 @@ export const TRANSLATIONS = {
     start: { sub: "1 मिनट टेस्ट", title1: "डोपामीन पैटर्न?", title2: "आदत टेस्ट", desc: "1 मिनट में फोकस चेक करें.", btn: "शुरू करें", tags: ["1 मिनट", "कोई डेटा नहीं", "तुरंत"] },
     quiz: { yes: "हाँ", no: "नहीं", q_prefix: "प्रश्न" },
     loading: { title: "विश्लेषण...", desc: "आदतों की पहचान हो रही है." },
-    result: { label: "संवेदनशीलता", action_title: "3 एक्शन प्लान", disclaimer: "केवल आत्म-मूल्यांकन के लिए.", promo_sub: "ठोस समाधान चाहिए?", promo_btn: "MINUS ऐप", retry: "फिर से", share: "शेयर" },
+    result: { label: "संवेदनशीलता", action_title: "3 एक्शन प्लान", share_title: "✨ दोस्तों के साथ साझा करें",disclaimer: "केवल आत्म-मूल्यांकन के लिए.", promo_sub: "ठोस समाधान चाहिए?", promo_btn: "MINUS ऐप", retry: "फिर से", share: "शेयर" },
     questions: [
       { q: "पिछले 2 हफ्तों में, जागने के 5 मिनट के भीतर फोन देखा?", cat: "नींद", title: "10 मिनट फोन-मुक्त", desc: "पानी से शुरुआत करें, ऐप्स से नहीं." },
       { q: "पिछले 2 हफ्तों में, काम रोककर नोटिफिकेशन देखा?", cat: "फोकस", title: "जरूरी अलर्ट ही", desc: "गहरे काम के लिए अलर्ट कम रखें." },
@@ -247,7 +247,7 @@ export const TRANSLATIONS = {
     start: { sub: "Test di 1 min", title1: "Profilo dopamina?", title2: "Test abitudini", desc: "Verifica il tuo focus in 1 minuto.", btn: "Inizia", tags: ["1 min", "Nessuna raccolta dati", "Risultato"] },
     quiz: { yes: "Sì", no: "No", q_prefix: "Domanda" },
     loading: { title: "Analisi...", desc: "Identificazione delle tue abitudini." },
-    result: { label: "Sensibilità", action_title: "3 piani per oggi", disclaimer: "Solo autovalutazione.", promo_sub: "Soluzione più forte?", promo_btn: "App MINUS", retry: "Riprova", share: "Condividi" },
+    result: { label: "Sensibilità", action_title: "3 piani per oggi", share_title: "✨ Condividi con gli amici",disclaimer: "Solo autovalutazione.", promo_sub: "Soluzione più forte?", promo_btn: "App MINUS", retry: "Riprova", share: "Condividi" },
     questions: [
       { q: "Nelle ultime 2 settimane, controllato tel al risveglio?", cat: "Sonno", title: "10 min senza tel", desc: "Inizia con acqua invece che con app." },
       { q: "Nelle ultime 2 settimane, interrotto compiti per notifs?", cat: "Focus", title: "Solo critiche", desc: "Tieni l'essenziale per il focus." },

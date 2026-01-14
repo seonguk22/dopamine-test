@@ -83,11 +83,8 @@ export default function DopamineTest() {
     }
   };
 
-  useEffect(() => {
-    initKakao();
-  }, []);
+  useEffect(() => { initKakao(); }, []);
 
-  const Q_LEN = QUESTIONS_META.length;
   const MAX_SCORE = useMemo(() => QUESTIONS_META.reduce((sum, q) => sum + q.point, 0), []);
   const markerLeft = useMemo(() => (!MAX_SCORE ? 0 : Math.min(98, (state.score / MAX_SCORE) * 100)), [state.score, MAX_SCORE]);
   const top3Answers = useMemo(() => [...state.answers].sort((a, b) => (QUESTIONS_META[b]?.point || 0) - (QUESTIONS_META[a]?.point || 0)).slice(0, 3), [state.answers]);
@@ -114,11 +111,7 @@ export default function DopamineTest() {
   const shareViaWebAPI = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: t.start?.title2 || '도파민 습관 테스트',
-          text: '내 도파민 패턴은? 1분 만에 확인해보세요!',
-          url: window.location.href,
-        });
+        await navigator.share({ title: t.start?.title2 || 'Dopamine Test', text: '내 도파민 패턴은?', url: window.location.href });
       } catch (e) { if (e.name !== 'AbortError') copyLink(); }
     } else { copyLink(); }
   };
@@ -161,33 +154,17 @@ export default function DopamineTest() {
 
   const shareResultAsImage = async () => {
     try {
-      // html-to-image 라이브러리가 필요합니다.
       const htmlToImage = await import('html-to-image');
       if (!resultRef.current) return;
-      
-      const dataUrl = await htmlToImage.toPng(resultRef.current, { 
-        backgroundColor: '#0a0a0a', 
-        pixelRatio: 2 
-      });
-      
+      const dataUrl = await htmlToImage.toPng(resultRef.current, { backgroundColor: '#0a0a0a', pixelRatio: 2 });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'result.png', { type: 'image/png' });
-      
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ 
-          files: [file], 
-          title: t.start?.title2 ?? "Dopamine Test Result" 
-        });
+        await navigator.share({ files: [file], title: t.start?.title2 ?? "Result" });
       } else {
-        const link = document.createElement('a');
-        link.download = 'result.png';
-        link.href = dataUrl;
-        link.click();
+        const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
       }
-    } catch (e) {
-      console.error(e);
-      alert(lang === 'ko' ? '이미지 저장에 실패했습니다.' : 'Failed to save image.');
-    }
+    } catch (e) { alert(lang === 'ko' ? '캡처에 실패했습니다.' : 'Capture failed.'); }
   };
 
   return (
@@ -202,73 +179,30 @@ export default function DopamineTest() {
                 <Brain size={48} className="text-purple-400" />
               </div>
               <div className="space-y-4">
-                <div className="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-400 text-xs font-bold tracking-wider mb-2">
-                  {t.start?.sub || "1분 자가 점검"}
-                </div>
-                <h1 className="text-3xl font-extrabold leading-tight text-white tracking-tight">
-                  {t.start?.title1 ?? "내 도파민 패턴은?"}<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">
-                    {t.start?.title2 ?? "도파민 습관 테스트"}
-                  </span>
-                </h1>
-                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">
-                  {lang === 'ko' ? '숏폼, 충동구매, 미루기...\n일상을 방해하는 패턴을\n1분 만에 점검해 보세요.' : 'Short-form, shopping, procrastination...\nCheck your daily patterns\nin just 1 minute.'}
-                </p>
+                <div className="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-400 text-xs font-bold tracking-wider mb-2">{t.start?.sub}</div>
+                <h1 className="text-3xl font-extrabold leading-tight text-white tracking-tight">{t.start?.title1}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">{t.start?.title2}</span></h1>
+                <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">{t.start?.desc}</p>
               </div>
-
-              <div className="pt-2">
-                <p className="text-emerald-400 text-[13px] font-bold animate-pulse">
-                   현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.
-                </p>
-              </div>
-
-              <div className="px-4">
-                <button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl">
-                  {t.start?.btn ?? "테스트 시작하기"}
-                </button>
-              </div>
-
-              {/* --- [제공해주신 공식 파일명이 반영된 SNS 버튼 세트] --- */}
+              <div className="pt-2"><p className="text-emerald-400 text-[13px] font-bold animate-pulse">현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.</p></div>
+              <div className="px-4"><button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl">{t.start?.btn}</button></div>
               <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
-                {/* 1. Link Copy (기능 유지) */}
-                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700 shadow-lg active:scale-95">
-                  <LinkIcon size={20} className="text-gray-300"/>
-                </button>
-
-                {/* 2. Instagram (SVG 반영) */}
-                <button onClick={shareViaWebAPI} className="w-12 h-12 rounded-full bg-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden">
-                  <img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" />
-                </button>
-
-                {/* 3. Facebook (PNG 반영) */}
-                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden">
-                  <img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" />
-                </button>
-
-                {/* 4. X (PNG 반영) */}
-                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800" aria-label="Share on X">
-                  <img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" />
-                </button>
-
-                {/* 5. KakaoTalk (PNG 반영) */}
-                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95">
-                  <img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" />
-                </button>
+                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700 shadow-lg active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
+                <button onClick={shareViaWebAPI} className="w-12 h-12 rounded-full bg-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
+                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
+                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
+                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
               </div>
             </div>
           )}
 
-          {/* ... quiz, loading, result 스텝은 이전과 동일 ... */}
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden">
-                <div className="bg-purple-500 h-full transition-all duration-300" style={{ width: `${((state.currentQ + 1) / Q_LEN) * 100}%` }} />
-              </div>
-              <div className="flex justify-between items-center text-xs text-gray-400 font-mono"><span>{t.quiz?.q_prefix ?? "Q"} {state.currentQ + 1}</span><span>{Q_LEN}</span></div>
-              <div className="min-h-[140px] flex items-center justify-center"><h2 className="text-xl font-bold text-center break-keep leading-snug">{t.questions?.[state.currentQ]?.q || "..."}</h2></div>
+              <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden"><div className="bg-purple-500 h-full transition-all duration-300" style={{ width: `${((state.currentQ + 1) / QUESTIONS_META.length) * 100}%` }} /></div>
+              <div className="flex justify-between items-center text-xs text-gray-400 font-mono"><span>{t.quiz?.q_prefix} {state.currentQ + 1}</span><span>{QUESTIONS_META.length}</span></div>
+              <div className="min-h-[140px] flex items-center justify-center"><h2 className="text-xl font-bold text-center break-keep leading-snug">{t.questions?.[state.currentQ]?.q}</h2></div>
               <div className="space-y-3">
-                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(true)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption === true ? 'bg-purple-500/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.yes ?? "Yes"}</span><CheckCircle className={selectedOption === true ? 'text-purple-400' : 'text-neutral-500'} size={24} /></button>
-                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(false)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption === false ? 'bg-blue-500/30 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.no ?? "No"}</span><XCircle className={selectedOption === false ? 'text-blue-400' : 'text-neutral-500'} size={24} /></button>
+                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(true)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption === true ? 'bg-purple-500/30 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.yes}</span><CheckCircle className={selectedOption === true ? 'text-purple-400' : 'text-neutral-500'} size={24} /></button>
+                <button disabled={selectedOption !== null} onClick={() => handleAnswerClick(false)} className={`w-full border p-5 rounded-2xl flex justify-between items-center transition-all ${selectedOption === false ? 'bg-blue-500/30 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.4)]' : 'bg-neutral-800 border-neutral-700 hover:bg-neutral-700'}`}><span className="font-semibold text-lg">{t.quiz?.no}</span><XCircle className={selectedOption === false ? 'text-blue-400' : 'text-neutral-500'} size={24} /></button>
               </div>
             </div>
           )}
@@ -276,107 +210,74 @@ export default function DopamineTest() {
           {state.step === 'loading' && (
             <div className="text-center py-20 space-y-6 flex flex-col justify-center min-h-[400px] animate-in fade-in">
               <div className="relative w-24 h-24 mx-auto border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin"></div>
-              <div className="space-y-2"><h2 className="text-2xl font-bold">{t.loading?.title || "..."}</h2><p className="text-gray-400 text-sm">{t.loading?.desc || "..."}</p></div>
+              <div className="space-y-2"><h2 className="text-2xl font-bold">{t.loading?.title}</h2><p className="text-gray-400 text-sm">{t.loading?.desc}</p></div>
             </div>
           )}
 
           {state.step === 'result' && (
-  <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
-    <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
-      <div className="space-y-4">
-        <div className="flex flex-col items-center justify-center gap-1">
-          {/* 폰트 크기 업: text-[10px] -> text-xs */}
-          <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>
-            {t.result?.label || "Level"} {trans.label}
-          </span>
-          {/* 폰트 크기 업: text-3xl -> text-4xl */}
-          <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
-        </div>
-        <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
-          {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
-          <div className="absolute top-0 h-full w-1.5 bg-white transition-all duration-1000 ease-out z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
-        </div>
-      </div>
-
-      <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
-        <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20 pointer-events-none`} />
-        {/* 폰트 크기 업: text-sm -> text-base */}
-        <div className="relative z-10 flex items-start gap-3 text-base font-medium break-keep text-gray-200">
-          <AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} />
-          <p>{trans.desc}</p>
-        </div>
-      </div>
-
-      <div className="text-left space-y-3 mt-8">
-        {/* 폰트 크기 업: text-xs -> text-sm */}
-        <div className="flex items-center gap-2 mb-1">
-          <CheckSquare size={16} className="text-gray-400"/>
-          <div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title || "Action Plan"}</div>
-        </div>
-        <div className="space-y-3">
-          {top3Answers.map((ansIdx, i) => (
-            <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
-              <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  {/* 폰트 크기 업: text-xs -> text-sm */}
-                  <span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{t.questions?.[ansIdx]?.cat}</span>
+            <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
+              <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center justify-center gap-1">
+                    <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
+                    <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
+                  </div>
+                  <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
+                    {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
+                    <div className="absolute top-0 h-full w-1.5 bg-white transition-all duration-1000 ease-out z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
+                  </div>
                 </div>
-                {/* 폰트 크기 업: text-[11px] -> text-xs */}
-                <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
+                <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20 pointer-events-none`} />
+                  <div className="relative z-10 flex items-start gap-3 text-base font-medium break-keep text-gray-200"><AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} /><p>{trans.desc}</p></div>
+                </div>
+                <div className="text-left space-y-3 mt-8">
+                  <div className="flex items-center gap-2 mb-1"><CheckSquare size={16} className="text-gray-400"/><div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title}</div></div>
+                  <div className="space-y-3">
+                    {top3Answers.map((ansIdx, i) => (
+                      <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5"><span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{t.questions?.[ansIdx]?.cat}</span></div>
+                          <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
+                    <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
+                    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
+                </div>
               </div>
+
+              {/* ✨ 1. 친구들에게 결과 자랑하기 (SNS 버튼 모음) */}
+              <div className="space-y-4 pt-8 pb-4">
+                <p className="text-sm text-gray-400 font-bold tracking-tight text-center">{t.result?.share_title}</p>
+                <div className="flex justify-center gap-4">
+                  <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 shadow-lg active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
+                  <button onClick={shareResultAsImage} className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
+                  <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center shadow-lg active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
+                  <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 shadow-lg active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
+                  <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center shadow-lg active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
+                </div>
+              </div>
+
+              {/* 🎯 2. MINUS 앱 홍보 (인디고 강조 버튼) */}
+              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg mt-4 transition-all active:scale-95 text-white">
+                <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
+                <span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span>
+              </a>
+
+              {/* 🔄 3. 다시하기 버튼 (최하단 유틸리티) */}
+              <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 transition-colors active:scale-95">
+                <RefreshCw size={18} /> {t.result?.retry || "Retry"}
+              </button>
             </div>
-          ))}
+          )}
         </div>
       </div>
-
-      <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
-          {/* 폰트 크기 업: text-[10px] -> text-xs */}
-          <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
-            <Info size={12} />
-            <span>{t.result?.disclaimer}</span>
-          </div>
-          <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
-      </div>
-    </div>
-    
-    {/* 하단 버튼 영역 크기는 유지하되 가독성 최적화 */}
-    <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
-      <a
-  href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff"
-  target="_blank"
-  rel="noopener noreferrer"
-  className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg mt-4 transition-colors text-white transition-all active:scale-95"
->
-  {/* 보라색 글씨를 밝은 흰색/연한 인디고 톤으로 변경 */}
-  <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
-  {/* 기존 흰색 글씨는 유지하며 아이콘 색상도 자동으로 따라갑니다 */}
-  <span className="text-sm font-bold flex items-center gap-1"><Smartphone size={14}/> {t.result?.promo_btn}</span>
-</a>
-    </div>
-    <div className="flex gap-2">
-  {/* t.retry -> t.result?.retry 로 수정 */}
-  <button 
-    onClick={() => dispatch({ type: ACTIONS.RESET })} 
-    className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors"
-  >
-    <RefreshCw size={18} /> {t.result?.retry || "Retry"}
-  </button>
-
-  {/* t.share -> t.result?.share 로 수정 */}
-  <button 
-    onClick={shareResultAsImage} 
-    className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"
-  >
-    <Share2 size={18} /> {t.result?.share || "Share"}
-  </button>
-</div>
-  </div>
-)}
-        </div>
-      </div>
-     <Analytics />
+      <Analytics />
     </div>
   );
 }
