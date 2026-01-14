@@ -3,8 +3,7 @@
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
 import { 
   Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
-  CheckCircle, XCircle, CheckSquare, Info, Instagram, Link as LinkIcon,
-  Facebook, X 
+  CheckCircle, XCircle, CheckSquare, Info, Link as LinkIcon 
 } from 'lucide-react';
 import { TRANSLATIONS } from './translations';
 
@@ -65,7 +64,7 @@ export default function DopamineTest() {
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
     const now = new Date().getTime();
     const diffInSeconds = Math.max(0, Math.floor((now - launchDate) / 1000));
-    return Math.floor(diffInSeconds / 400); // 10분에 1.5명
+    return Math.floor(diffInSeconds / 400); 
   };
 
   const [participantCount, setParticipantCount] = useState(getDynamicCount());
@@ -75,11 +74,16 @@ export default function DopamineTest() {
     return () => clearInterval(interval);
   }, []);
 
-  // --- [카카오 SDK 초기화: Windvane님의 키 적용] ---
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
-      window.Kakao.init('304d9d079f4f881ad2c17ae749aa7a39'); 
+  const initKakao = () => {
+    if (typeof window !== 'undefined' && window.Kakao) {
+      if (!window.Kakao.isInitialized()) {
+        window.Kakao.init('304d9d079f4f881ad2c17ae749aa7a39');
+      }
     }
+  };
+
+  useEffect(() => {
+    initKakao();
   }, []);
 
   const Q_LEN = QUESTIONS_META.length;
@@ -119,28 +123,20 @@ export default function DopamineTest() {
   };
 
   const shareToKakao = () => {
-  // 버튼을 누를 때마다 초기화 상태를 다시 체크합니다.
-  if (window.Kakao && !window.Kakao.isInitialized()) {
-    window.Kakao.init('304d9d079f4f881ad2c17ae749aa7a39');
-  }
-
-  if (window.Kakao && window.Kakao.isInitialized()) {
-    window.Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: t.start?.title2 || '도파민 습관 테스트',
-        description: '내 도파민 패턴은? 1분 만에 확인해보세요!',
-        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
-        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-      },
-      buttons: [{ title: '테스트 하러가기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
-    });
-  } else {
-    // 여전히 안 된다면 S21 울트라에서 이 알림이 뜰 것입니다.
-    alert("카카오톡 연결에 실패했습니다. (SDK 로드 문제)");
-    shareViaWebAPI();
-  }
-};
+    initKakao();
+    if (window.Kakao && window.Kakao.isInitialized()) {
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: t.start?.title2 || '도파민 습관 테스트',
+          description: '내 도파민 패턴은? 1분 만에 확인하고 오늘의 액션 플랜을 받아보세요.',
+          imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
+          link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+        },
+        buttons: [{ title: '테스트 하러가기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
+      });
+    } else { shareViaWebAPI(); }
+  };
 
   const shareSNS = (platform) => {
     const url = encodeURIComponent(window.location.href);
@@ -160,21 +156,6 @@ export default function DopamineTest() {
       dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } });
       setSelectedOption(null);
     }, 400);
-  };
-
-  const shareResultAsImage = async () => {
-    try {
-      const htmlToImage = await import('html-to-image');
-      if (!resultRef.current) return;
-      const dataUrl = await htmlToImage.toPng(resultRef.current, { backgroundColor: '#0a0a0a', pixelRatio: 2 });
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'result.png', { type: 'image/png' });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: t.start?.title2 ?? "Result" });
-      } else {
-        const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
-      }
-    } catch (e) { alert(lang === 'ko' ? '캡처에 실패했습니다.' : 'Capture failed.'); }
   };
 
   return (
@@ -215,33 +196,31 @@ export default function DopamineTest() {
                 </button>
               </div>
 
+              {/* --- [제공해주신 공식 파일명이 반영된 SNS 버튼 세트] --- */}
               <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
-                {/* 1. Link Copy (Neutral Gray) */}
-                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700 shadow-lg active:scale-95" aria-label="Copy Link">
-                  <LinkIcon size={22} className="text-gray-300"/>
+                {/* 1. Link Copy (기능 유지) */}
+                <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700 shadow-lg active:scale-95">
+                  <LinkIcon size={20} className="text-gray-300"/>
                 </button>
 
-                {/* 2. Instagram (Official Gradient) - 기능 유지 */}
-                <button onClick={shareViaWebAPI} className="w-12 h-12 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95" aria-label="Share on Instagram">
-                  <Instagram size={24} className="text-white"/>
+                {/* 2. Instagram (SVG 반영) */}
+                <button onClick={shareViaWebAPI} className="w-12 h-12 rounded-full bg-white flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden">
+                  <img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" />
                 </button>
 
-                {/* 3. Facebook (Official Blue & Icon) */}
-                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95" aria-label="Share on Facebook">
-                  <Facebook size={24} className="text-white" />
+                {/* 3. Facebook (PNG 반영) */}
+                <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 overflow-hidden">
+                  <img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" />
                 </button>
 
-                {/* 4. X (Official Black & Icon) */}
-                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800" aria-label="Share on X">
-                  <X size={22} className="text-white" />
+                {/* 4. X (SVG 반영) */}
+                <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95 border border-neutral-800">
+                  <img src="/icons/x_logo.svg" alt="X" className="w-6 h-6 invert" />
                 </button>
 
-                {/* 5. KakaoTalk (Official Yellow & SVG Icon) - 기능 유지 */}
-                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95" aria-label="Share on KakaoTalk">
-                  {/* Official Kakao SVG Icon */}
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 3C6.48 3 2 6.58 2 11C2 13.85 3.7 16.38 6.33 17.8C6.13 18.5 5.74 19.95 5.34 21.41C5.24 21.75 5.61 22.04 5.9 21.84C7.58 20.73 9.67 19.36 10.57 18.8C11.04 18.86 11.52 18.9 12 18.9C17.52 18.9 22 15.32 22 11C22 6.58 17.52 3 12 3Z" fill="#3C1E1E"/>
-                  </svg>
+                {/* 5. KakaoTalk (PNG 반영) */}
+                <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-90 transition-opacity shadow-lg active:scale-95">
+                  <img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" />
                 </button>
               </div>
             </div>
