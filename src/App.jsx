@@ -70,6 +70,7 @@ export default function DopamineTest() {
   };
 
   const [participantCount, setParticipantCount] = useState(getDynamicCount());
+
   useEffect(() => {
     const interval = setInterval(() => setParticipantCount(getDynamicCount()), 10000);
     return () => clearInterval(interval);
@@ -82,6 +83,7 @@ export default function DopamineTest() {
       }
     }
   };
+
   useEffect(() => { initKakao(); }, []);
 
   const MAX_SCORE = useMemo(() => QUESTIONS_META.reduce((sum, q) => sum + q.point, 0), []);
@@ -129,10 +131,12 @@ export default function DopamineTest() {
     if (state.step === 'result') {
       try {
         const htmlToImage = await import('html-to-image');
-        // ✅ [필수] 렌더링을 기다리기 위해 200ms 지연 (검은 화면 방지)
-        await new Promise(res => setTimeout(res, 200));
-
         if (!shareCardRef.current) return;
+
+        // ✅ [해결] 캡처 전 0.5초 대기 및 더블 호출로 렌더링 강제
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await htmlToImage.toPng(shareCardRef.current); 
+        
         const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
           backgroundColor: '#0a0a0a', 
           pixelRatio: 2,
@@ -147,7 +151,7 @@ export default function DopamineTest() {
           objectType: 'feed',
           content: {
             title: `내 도파민 결과: ${trans.title}`,
-            description: `여러분의 도파민 패턴도 1분 만에 확인해보세요!`,
+            description: `여러분의 패턴도 1분 만에 확인해보세요!`,
             imageUrl: uploadRes.infos.original.url,
             imageWidth: uploadRes.infos.original.width,
             imageHeight: uploadRes.infos.original.height,
@@ -156,15 +160,15 @@ export default function DopamineTest() {
           buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
         });
         return;
-      } catch (e) { console.error('결과 공유 실패:', e); }
+      } catch (e) { console.error('카카오 공유 실패:', e); }
     }
 
-    // 시작 화면일 경우: 캡처 없이 링크만 공유
+    // 시작 화면에서는 링크만 공유
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        title: t.start?.title2 || "도파민 습관 테스트",
-        description: t.start?.desc || "나의 도파민 지수는 얼마일까?",
+        title: t.start?.title2,
+        description: t.start?.desc,
         imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
         link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
       },
@@ -175,19 +179,14 @@ export default function DopamineTest() {
   const shareSNS = (platform) => {
     const url = encodeURIComponent(window.location.href);
     const isResult = state.step === 'result';
-    // ✅ 시작하기 화면에서는 이전 결과가 섞이지 않도록 제목만 공유
     const resultText = isResult 
       ? `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`
       : (t.start?.title2 || "도파민 습관 테스트");
     const text = encodeURIComponent(resultText);
 
-    if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-    } else if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-    } else {
-      shareViaWebAPI(true);
-    }
+    if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+    else shareViaWebAPI(true);
   };
 
   const handleAnswerClick = (isYes) => {
@@ -217,9 +216,9 @@ export default function DopamineTest() {
       } else {
         const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
         await navigator.clipboard.writeText(shareUrl);
-        alert(lang === 'ko' ? '이미지 저장 및 링크가 복사되었습니다!' : 'Image saved & Link copied!');
+        alert(lang === 'ko' ? '이미지 저장 및 링크 복사 완료!' : 'Saved & Copied!');
       }
-    } catch (e) { alert(lang === 'ko' ? '캡처에 실패했습니다.' : 'Capture failed.'); }
+    } catch (e) { alert(lang === 'ko' ? '공유 실패' : 'Failed'); }
   };
 
   return (
@@ -272,7 +271,7 @@ export default function DopamineTest() {
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               
-              {/* ✅ [해결] 요약 카드를 'opacity-0'으로 배치하여 브라우저가 그리게 함 */}
+              {/* ✅ [해결] 캡처용 숨겨진 요약 카드 배치 (검은 화면 방지) */}
               <div ref={shareCardRef} className="fixed flex flex-col items-center justify-center space-y-8" style={{ left: '0', top: '0', width: '500px', height: '500px', backgroundColor: '#0a0a0a', zIndex: -10, opacity: 0, pointerEvents: 'none' }}>
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50" style={{ backgroundColor: '#262626' }}><Brain size={40} className="text-purple-400" /></div>
                 <div className="text-center space-y-3"><span className={`text-sm font-black tracking-widest uppercase ${meta.color}`} style={{ display: 'block' }}>{t.result?.label} {trans.label}</span><h2 className={`text-5xl font-black ${meta.color} leading-tight`}>{trans.title}</h2></div>
@@ -313,7 +312,6 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              {/* 공유 버튼 섹션 */}
               <div className="space-y-4 pt-8 pb-4 text-center">
                 <p className="text-sm text-gray-400 font-bold tracking-tight">{t.result?.share_title}</p>
                 <div className="flex justify-center gap-4">
