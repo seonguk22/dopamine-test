@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { TRANSLATIONS } from './translations';
 
-// --- [META DATA] ---
 const QUESTIONS_META = [
   { point: 1 }, { point: 1 }, { point: 2 }, { point: 1 }, { point: 2 }, { point: 2 },
   { point: 1 }, { point: 2 }, { point: 2 }, { point: 2 }, { point: 1 }, { point: 2 }
@@ -65,7 +64,7 @@ export default function DopamineTest() {
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
     const now = new Date().getTime();
     const diffInSeconds = Math.max(0, Math.floor((now - launchDate) / 1000));
-    return Math.floor(diffInSeconds / 400); // 10분에 약 1.5명 증가
+    return Math.floor(diffInSeconds / 400); // 10분에 1.5명
   };
 
   const [participantCount, setParticipantCount] = useState(getDynamicCount());
@@ -73,6 +72,13 @@ export default function DopamineTest() {
   useEffect(() => {
     const interval = setInterval(() => setParticipantCount(getDynamicCount()), 10000);
     return () => clearInterval(interval);
+  }, []);
+
+  // --- [카카오 SDK 초기화: Windvane님의 키 적용] ---
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Kakao && !window.Kakao.isInitialized()) {
+      window.Kakao.init('304d9d079f4f881ad2c17ae749aa7a39'); 
+    }
   }, []);
 
   const Q_LEN = QUESTIONS_META.length;
@@ -94,7 +100,6 @@ export default function DopamineTest() {
     }
   }, [state.step]);
 
-  // --- [공유 로직 통합] ---
   const copyLink = () => {
     navigator.clipboard.writeText(window.location.href);
     alert(lang === 'ko' ? '링크가 복사되었습니다!' : 'Link copied!');
@@ -105,26 +110,34 @@ export default function DopamineTest() {
       try {
         await navigator.share({
           title: t.start?.title2 || '도파민 습관 테스트',
-          text: t.start?.desc || '내 도파민 패턴은? 1분 만에 확인해보세요.',
+          text: '내 도파민 패턴은? 1분 만에 확인해보세요!',
           url: window.location.href,
         });
-      } catch (e) { copyLink(); }
-    } else {
-      copyLink();
-    }
+      } catch (e) { if (e.name !== 'AbortError') copyLink(); }
+    } else { copyLink(); }
+  };
+
+  const shareToKakao = () => {
+    if (window.Kakao && window.Kakao.isInitialized()) {
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: t.start?.title2 || '도파민 습관 테스트',
+          description: '내 도파민 패턴은? 1분 만에 확인하고 오늘의 액션 플랜을 받아보세요.',
+          imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
+          link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+        },
+        buttons: [{ title: '테스트 하러가기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
+      });
+    } else { shareViaWebAPI(); }
   };
 
   const shareSNS = (platform) => {
     const url = encodeURIComponent(window.location.href);
     const text = encodeURIComponent(t.start?.title2 || '도파민 습관 테스트');
-    let shareUrl = '';
-
-    switch (platform) {
-      case 'facebook': shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`; break;
-      case 'twitter': shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`; break;
-      default: shareViaWebAPI(); return;
-    }
-    window.open(shareUrl, '_blank', 'width=600,height=400');
+    if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+    else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
+    else shareViaWebAPI();
   };
 
   const handleAnswerClick = (isYes) => {
@@ -192,17 +205,17 @@ export default function DopamineTest() {
                 </button>
               </div>
 
-              {/* --- [공유 버튼 액션 연결] --- */}
               <div className="flex justify-center gap-4 pt-6 opacity-80">
-                <button onClick={copyLink} title="복사" className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700"><LinkIcon size={20} className="text-gray-300"/></button>
-                <button onClick={shareViaWebAPI} title="인스타그램/기타" className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition-opacity"><Instagram size={20} className="text-white"/></button>
-                <button onClick={() => shareSNS('facebook')} title="페이스북" className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-white font-black text-sm">f</span></button>
-                <button onClick={() => shareSNS('twitter')} title="X(트위터)" className="w-11 h-11 rounded-full bg-black border border-neutral-700 flex items-center justify-center hover:bg-neutral-900 transition-colors"><span className="text-white font-black text-sm">X</span></button>
-                <button onClick={shareViaWebAPI} title="카카오톡" className="w-11 h-11 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-[#3c1e1e] text-xl">💬</span></button>
+                <button onClick={copyLink} className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700"><LinkIcon size={20} className="text-gray-300"/></button>
+                <button onClick={shareViaWebAPI} className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition-opacity"><Instagram size={20} className="text-white"/></button>
+                <button onClick={() => shareSNS('facebook')} className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-white font-black text-sm">f</span></button>
+                <button onClick={() => shareSNS('twitter')} className="w-11 h-11 rounded-full bg-black border border-neutral-700 flex items-center justify-center hover:bg-neutral-900 transition-colors"><span className="text-white font-black text-sm">X</span></button>
+                <button onClick={shareToKakao} className="w-11 h-11 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-[#3c1e1e] text-xl">💬</span></button>
               </div>
             </div>
           )}
 
+          {/* ... quiz, loading, result 스텝은 이전과 동일 ... */}
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden">
@@ -260,21 +273,18 @@ export default function DopamineTest() {
                     <span className="text-[9px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
                 </div>
               </div>
-
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
                 <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-neutral-950 py-4 rounded-2xl flex flex-col items-center gap-1">
                   <span className="text-xs text-purple-400 font-bold">{t.result?.promo_sub}</span>
                   <span className="text-sm font-bold flex items-center gap-1 text-white"><Smartphone size={14}/> {t.result?.promo_btn}</span>
                 </a>
               </div>
-
               <div className="flex gap-2">
                 <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"><RefreshCw size={16} /> {t.result?.retry || "Retry"}</button>
                 <button onClick={shareResultAsImage} className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"><Share2 size={16} /> {t.result?.share || "Share"}</button>
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
