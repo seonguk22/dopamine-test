@@ -281,53 +281,86 @@ export default function DopamineTest() {
           )}
 
           {state.step === 'result' && (
-            <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
-              <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
-                <div className="space-y-4">
-                  <div className="flex flex-col items-center justify-center gap-1">
-                    <span className={`text-[10px] font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label || "Level"} {trans.label}</span>
-                    <h2 className={`text-3xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
-                  </div>
-                  <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
-                    {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
-                    <div className={`absolute top-0 h-full w-1.5 bg-white transition-all duration-1000 ease-out z-10 shadow-[0_0_10px_white]`} style={{ left: `${markerLeft}%` }}></div>
-                  </div>
+  <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
+    <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
+      <div className="space-y-4">
+        <div className="flex flex-col items-center justify-center gap-1">
+          {/* 폰트 크기 업: text-[10px] -> text-xs */}
+          <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>
+            {t.result?.label || "Level"} {trans.label}
+          </span>
+          {/* 폰트 크기 업: text-3xl -> text-4xl */}
+          <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
+        </div>
+        <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
+          {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
+          <div className="absolute top-0 h-full w-1.5 bg-white transition-all duration-1000 ease-out z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
+        </div>
+      </div>
+
+      <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
+        <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20 pointer-events-none`} />
+        {/* 폰트 크기 업: text-sm -> text-base */}
+        <div className="relative z-10 flex items-start gap-3 text-base font-medium break-keep text-gray-200">
+          <AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} />
+          <p>{trans.desc}</p>
+        </div>
+      </div>
+
+      <div className="text-left space-y-3 mt-8">
+        {/* 폰트 크기 업: text-xs -> text-sm */}
+        <div className="flex items-center gap-2 mb-1">
+          <CheckSquare size={16} className="text-gray-400"/>
+          <div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title || "Action Plan"}</div>
+        </div>
+        <div className="space-y-3">
+          {top3Answers.map((ansIdx, i) => (
+            <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
+              <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                  {/* 폰트 크기 업: text-xs -> text-sm */}
+                  <span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{t.questions?.[ansIdx]?.cat}</span>
                 </div>
-                <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
-                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20 pointer-events-none`} />
-                  <div className="relative z-10 flex items-start gap-3 text-sm font-medium break-keep text-gray-200"><AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={18} /><p>{trans.desc}</p></div>
-                </div>
-                <div className="text-left space-y-3 mt-8">
-                  <div className="flex items-center gap-2 mb-1"><CheckSquare size={14} className="text-gray-400"/><div className="text-xs font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title || "Action Plan"}</div></div>
-                  <div className="space-y-3">
-                    {top3Answers.map((ansIdx, i) => (
-                      <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1.5"><span className="text-xs font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span><span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{t.questions?.[ansIdx]?.cat}</span></div>
-                          <p className="text-[11px] text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-8 pt-4 border-t border-neutral-900 text-center text-[10px] text-gray-600 space-y-2">
-                    <div className="flex items-center justify-center gap-1.5"><Info size={10} /><span>{t.result?.disclaimer}</span></div>
-                    <span className="text-[9px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
-                </div>
-              </div>
-              <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
-                <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-neutral-950 py-4 rounded-2xl flex flex-col items-center gap-1">
-                  <span className="text-xs text-purple-400 font-bold">{t.result?.promo_sub}</span>
-                  <span className="text-sm font-bold flex items-center gap-1 text-white"><Smartphone size={14}/> {t.result?.promo_btn}</span>
-                </a>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"><RefreshCw size={16} /> {t.result?.retry || "Retry"}</button>
-                <button onClick={shareResultAsImage} className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"><Share2 size={16} /> {t.result?.share || "Share"}</button>
+                {/* 폰트 크기 업: text-[11px] -> text-xs */}
+                <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
               </div>
             </div>
-          )}
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
+          {/* 폰트 크기 업: text-[10px] -> text-xs */}
+          <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
+            <Info size={12} />
+            <span>{t.result?.disclaimer}</span>
+          </div>
+          <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
+      </div>
+    </div>
+    
+    {/* 하단 버튼 영역 크기는 유지하되 가독성 최적화 */}
+    <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
+      <a
+  href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 shadow-lg mt-4 transition-colors text-white transition-all active:scale-95"
+>
+  {/* 보라색 글씨를 밝은 흰색/연한 인디고 톤으로 변경 */}
+  <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
+  {/* 기존 흰색 글씨는 유지하며 아이콘 색상도 자동으로 따라갑니다 */}
+  <span className="text-sm font-bold flex items-center gap-1"><Smartphone size={14}/> {t.result?.promo_btn}</span>
+</a>
+    </div>
+    <div className="flex gap-2">
+      <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors"><RefreshCw size={18} /> {t.retry || "Retry"}</button>
+      <button onClick={shareResultAsImage} className="flex-1 bg-white hover:bg-gray-200 text-black py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 transition-colors shadow-lg"><Share2 size={18} /> {t.share || "Share"}</button>
+    </div>
+  </div>
+)}
         </div>
       </div>
      <Analytics />
