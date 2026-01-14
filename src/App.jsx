@@ -60,6 +60,7 @@ export default function DopamineTest() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedOption, setSelectedOption] = useState(null);
   const resultRef = useRef(null);
+  const shareCardRef = useRef(null);
 
   const getDynamicCount = () => {
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
@@ -125,30 +126,27 @@ export default function DopamineTest() {
   if (window.Kakao && window.Kakao.isInitialized()) {
     try {
       const htmlToImage = await import('html-to-image');
-      if (!resultRef.current) return;
+      // ✅ 캡처 대상을 요약 카드(shareCardRef)로 변경
+      if (!shareCardRef.current) return;
 
-      // 1. 결과 화면을 이미지(DataURL)로 만듭니다.
-      const dataUrl = await htmlToImage.toPng(resultRef.current, { 
+      const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
         backgroundColor: '#0a0a0a', 
         pixelRatio: 2 
       });
 
-      // 2. 카카오 서버에 이미지를 업로드하여 임시 URL을 받습니다.
-      // (파일 객체로 변환하여 업로드)
       const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'result.png', { type: 'image/png' });
+      const file = new File([blob], 'result_summary.png', { type: 'image/png' });
       
       const uploadRes = await window.Kakao.Share.uploadImage({ file: [file] });
       const sharedImageUrl = uploadRes.infos.original.url;
 
-      // 3. 업로드된 '진짜 결과 사진'과 링크를 함께 보냅니다.
       window.Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
           title: `내 도파민 결과: ${trans.title}`,
           description: `제 민감도는 [${trans.label}] 수준이네요! 1분 만에 확인해보세요.`,
-          imageUrl: sharedImageUrl, // 👈 고정 이미지가 아닌 '업로드된 결과 사진'
-          imageWidth: uploadRes.infos.original.width, 
+          imageUrl: sharedImageUrl,
+          imageWidth: uploadRes.infos.original.width,
           imageHeight: uploadRes.infos.original.height,
           link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
         },
@@ -160,8 +158,8 @@ export default function DopamineTest() {
         ],
       });
     } catch (e) {
-      console.error('카카오 공유 실패:', e);
-      shareViaWebAPI(); // 실패 시 기본 공유로 폴백
+      console.error('공유 실패:', e);
+      shareViaWebAPI();
     }
   } else {
     shareViaWebAPI();
@@ -284,6 +282,33 @@ export default function DopamineTest() {
 
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
+              <div 
+      ref={shareCardRef} 
+      className="fixed -left-[9999px] top-0 bg-neutral-950 p-10 w-[500px] flex flex-col items-center justify-center space-y-8"
+      style={{ minHeight: '500px' }}
+    >
+      <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50">
+        <Brain size={40} className="text-purple-400" />
+      </div>
+      <div className="text-center space-y-3">
+        <span className={`text-sm font-black tracking-widest uppercase ${meta.color}`}>
+          {t.result?.label} {trans.label}
+        </span>
+        <h2 className={`text-5xl font-black ${meta.color} leading-tight`}>
+          {trans.title}
+        </h2>
+      </div>
+      <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800">
+        <div className={`h-full ${meta.marker}`} style={{ width: `${markerLeft}%` }} />
+      </div>
+      <p className="text-gray-300 text-xl font-medium text-center break-keep leading-relaxed px-4">
+        {trans.desc}
+      </p>
+      <div className="pt-6 border-t border-neutral-900 w-full text-center">
+        <span className="text-sm text-purple-500 font-mono tracking-tighter">dopamine-test-alpha.vercel.app</span>
+      </div>
+    </div>
+              
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4">
                   <div className="flex flex-col items-center justify-center gap-1">
