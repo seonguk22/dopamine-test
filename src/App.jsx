@@ -107,7 +107,6 @@ export default function DopamineTest() {
     alert(lang === 'ko' ? '링크가 복사되었습니다!' : 'Link copied!');
   };
 
-  // ✅ 공유 기능 통합: 시작(링크) vs 결과(결과 텍스트 포함)
   const shareViaWebAPI = async (forceLink = false) => {
     const isResult = state.step === 'result' && !forceLink;
     const shareUrl = window.location.href;
@@ -125,26 +124,19 @@ export default function DopamineTest() {
 
   const shareToKakao = async () => {
     initKakao();
-    
-    // 카카오 SDK가 로드되지 않았을 경우 폴백
-    if (!window.Kakao || !window.Kakao.isInitialized()) {
-      return shareViaWebAPI(true);
-    }
+    if (!window.Kakao || !window.Kakao.isInitialized()) return shareViaWebAPI(true);
 
-    // 1. 결과 화면일 때: 이미지 캡처 후 업로드 공유
     if (state.step === 'result') {
       try {
         const htmlToImage = await import('html-to-image');
-        
-        // 렌더링 대기 (검은 화면 방지)
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // ✅ [필수] 렌더링을 기다리기 위해 200ms 지연 (검은 화면 방지)
+        await new Promise(res => setTimeout(res, 200));
 
         if (!shareCardRef.current) return;
-
         const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
           backgroundColor: '#0a0a0a', 
           pixelRatio: 2,
-          cacheBust: true
+          cacheBust: true 
         });
 
         const blob = await (await fetch(dataUrl)).blob();
@@ -155,7 +147,7 @@ export default function DopamineTest() {
           objectType: 'feed',
           content: {
             title: `내 도파민 결과: ${trans.title}`,
-            description: `여러분의 패턴도 1분 만에 확인해보세요!`,
+            description: `여러분의 도파민 패턴도 1분 만에 확인해보세요!`,
             imageUrl: uploadRes.infos.original.url,
             imageWidth: uploadRes.infos.original.width,
             imageHeight: uploadRes.infos.original.height,
@@ -163,46 +155,33 @@ export default function DopamineTest() {
           },
           buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
         });
-        return; // 결과 공유 완료 후 종료
-      } catch (e) {
-        console.error('결과 공유 실패:', e);
-      }
+        return;
+      } catch (e) { console.error('결과 공유 실패:', e); }
     }
 
-    // 2. 시작 화면일 때 (또는 결과 공유 실패 시): 단순 링크 공유
-    // 시작 화면에서는 shareCardRef가 null이므로 캡처 로직을 타지 않고 바로 일로 넘어옵니다.
+    // 시작 화면일 경우: 캡처 없이 링크만 공유
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
         title: t.start?.title2 || "도파민 습관 테스트",
         description: t.start?.desc || "나의 도파민 지수는 얼마일까?",
-        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png', // 미리 준비한 썸네일
+        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
         link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
       },
-      buttons: [{ 
-        title: '테스트 시작하기', 
-        link: { mobileWebUrl: window.location.href, webUrl: window.location.href } 
-      }],
+      buttons: [{ title: '테스트 시작하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
     });
   };
 
   const shareSNS = (platform) => {
-    // 1. 결과 화면일 경우 URL 뒤에 파라미터를 붙여 페이스북이 '다른 페이지'로 인식하게 함
-    const shareUrl = state.step === 'result' 
-      ? `${window.location.origin}${window.location.pathname}?res=${resIdx}`
-      : window.location.href;
-      
-    const url = encodeURIComponent(shareUrl);
+    const url = encodeURIComponent(window.location.href);
     const isResult = state.step === 'result';
-    
-    // X(트위터)는 텍스트를 받으므로 유지
+    // ✅ 시작하기 화면에서는 이전 결과가 섞이지 않도록 제목만 공유
     const resultText = isResult 
-      ? `${t.result?.share_msg} [${trans.title}]! ${t.result?.share_suffix}`
+      ? `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`
       : (t.start?.title2 || "도파민 습관 테스트");
     const text = encodeURIComponent(resultText);
 
     if (platform === 'facebook') {
-      // ✅ 페이스북은 shareUrl에 결과 파라미터를 담아 보냄
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
     } else if (platform === 'twitter') {
       window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
@@ -240,7 +219,7 @@ export default function DopamineTest() {
         await navigator.clipboard.writeText(shareUrl);
         alert(lang === 'ko' ? '이미지 저장 및 링크가 복사되었습니다!' : 'Image saved & Link copied!');
       }
-    } catch (e) { alert(lang === 'ko' ? '공유에 실패했습니다.' : 'Share failed.'); }
+    } catch (e) { alert(lang === 'ko' ? '캡처에 실패했습니다.' : 'Capture failed.'); }
   };
 
   return (
@@ -260,7 +239,7 @@ export default function DopamineTest() {
                 <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">{t.start?.desc}</p>
               </div>
               <div className="pt-2"><p className="text-emerald-400 text-[13px] font-bold animate-pulse">현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.</p></div>
-              <div className="px-4"><button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl">{t.start?.btn}</button></div>
+              <div className="px-4"><button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 border border-purple-400/30 text-xl">{t.start?.btn}</button></div>
               <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
                 <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
                 <button onClick={() => shareViaWebAPI(true)} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
@@ -293,8 +272,8 @@ export default function DopamineTest() {
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               
-              {/* ✨ 캡처 전용 숨겨진 요약 카드 (검은 화면 방지) */}
-              <div ref={shareCardRef} className="fixed flex flex-col items-center justify-center space-y-8" style={{ left: '-9999px', top: '0', width: '500px', height: '500px', backgroundColor: '#0a0a0a', zIndex: -1 }}>
+              {/* ✅ [해결] 요약 카드를 'opacity-0'으로 배치하여 브라우저가 그리게 함 */}
+              <div ref={shareCardRef} className="fixed flex flex-col items-center justify-center space-y-8" style={{ left: '0', top: '0', width: '500px', height: '500px', backgroundColor: '#0a0a0a', zIndex: -10, opacity: 0, pointerEvents: 'none' }}>
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50" style={{ backgroundColor: '#262626' }}><Brain size={40} className="text-purple-400" /></div>
                 <div className="text-center space-y-3"><span className={`text-sm font-black tracking-widest uppercase ${meta.color}`} style={{ display: 'block' }}>{t.result?.label} {trans.label}</span><h2 className={`text-5xl font-black ${meta.color} leading-tight`}>{trans.title}</h2></div>
                 <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800" style={{ backgroundColor: '#171717' }}><div className={`h-full ${meta.marker}`} style={{ width: `${markerLeft}%` }} /></div>
@@ -303,44 +282,40 @@ export default function DopamineTest() {
               </div>
 
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
-                <div className="space-y-4">
-                  <div className="flex flex-col items-center justify-center gap-1">
-                    <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
-                    <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
-                  </div>
+                <div className="space-y-4 text-center">
+                  <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
+                  <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
                   <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
                     {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
-                    <div className="absolute top-0 h-full w-1.5 bg-white transition-all duration-1000 ease-out z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
+                    <div className="absolute top-0 h-full w-1.5 bg-white z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
                   </div>
                 </div>
                 <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
-                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20 pointer-events-none`} />
-                  <div className="relative z-10 flex items-start gap-3 text-base font-medium break-keep text-gray-200"><AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} /><p>{trans.desc}</p></div>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20`} />
+                  <div className="relative z-10 flex items-start gap-3 text-base font-medium text-gray-200"><AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} /><p>{trans.desc}</p></div>
                 </div>
                 <div className="text-left space-y-3 mt-8">
                   <div className="flex items-center gap-2 mb-1"><CheckSquare size={16} className="text-gray-400"/><div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title}</div></div>
-                  <div className="space-y-3">
-                    {top3Answers.map((ansIdx, i) => (
-                      <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
-                        <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-1.5"><span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 whitespace-nowrap font-medium">#{t.questions?.[ansIdx]?.cat}</span></div>
-                          <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
-                        </div>
+                  {top3Answers.map((ansIdx, i) => (
+                    <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5"><span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">#{t.questions?.[ansIdx]?.cat}</span></div>
+                        <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
                 <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
                     <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
-                    <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter">dopamine-test-alpha.vercel.app</span></div>
-                    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
+                    <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter text-center block">dopamine-test-alpha.vercel.app</span></div>
+                    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block text-center">Designed by Windvane</span>
                 </div>
               </div>
 
-              {/* ✨ 1. 결과 화면 전용 SNS 공유 섹션 */}
-              <div className="space-y-4 pt-8 pb-4">
-                <p className="text-sm text-gray-400 font-bold tracking-tight text-center">{t.result?.share_title}</p>
+              {/* 공유 버튼 섹션 */}
+              <div className="space-y-4 pt-8 pb-4 text-center">
+                <p className="text-sm text-gray-400 font-bold tracking-tight">{t.result?.share_title}</p>
                 <div className="flex justify-center gap-4">
                   <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
                   <button onClick={shareResultAsImage} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
@@ -350,14 +325,12 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              {/* 🎯 2. MINUS 앱 홍보 */}
-              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg shadow-indigo-500/20">
+              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg">
                 <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
                 <span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span>
               </a>
 
-              {/* 🔄 3. 다시하기 버튼 */}
-              <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 transition-colors active:scale-95">
+              <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 active:scale-95">
                 <RefreshCw size={18} /> {t.result?.retry || "Retry"}
               </button>
             </div>
