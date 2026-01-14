@@ -118,19 +118,28 @@ export default function DopamineTest() {
   };
 
   const shareToKakao = () => {
-    if (window.Kakao && window.Kakao.isInitialized()) {
-      window.Kakao.Share.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: t.start?.title2 || '도파민 습관 테스트',
-          description: '내 도파민 패턴은? 1분 만에 확인하고 오늘의 액션 플랜을 받아보세요.',
-          imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
-          link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-        },
-        buttons: [{ title: '테스트 하러가기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
-      });
-    } else { shareViaWebAPI(); }
-  };
+  // 버튼을 누를 때마다 초기화 상태를 다시 체크합니다.
+  if (window.Kakao && !window.Kakao.isInitialized()) {
+    window.Kakao.init('304d9d079f4f881ad2c17ae749aa7a39');
+  }
+
+  if (window.Kakao && window.Kakao.isInitialized()) {
+    window.Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: t.start?.title2 || '도파민 습관 테스트',
+        description: '내 도파민 패턴은? 1분 만에 확인해보세요!',
+        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
+        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+      },
+      buttons: [{ title: '테스트 하러가기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
+    });
+  } else {
+    // 여전히 안 된다면 S21 울트라에서 이 알림이 뜰 것입니다.
+    alert("카카오톡 연결에 실패했습니다. (SDK 로드 문제)");
+    shareViaWebAPI();
+  }
+};
 
   const shareSNS = (platform) => {
     const url = encodeURIComponent(window.location.href);
