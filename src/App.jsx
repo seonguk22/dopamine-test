@@ -120,23 +120,50 @@ export default function DopamineTest() {
     } else { copyLink(); }
   };
 
-  const shareToKakao = () => {
+  const shareToKakao = async () => {
   initKakao();
   if (window.Kakao && window.Kakao.isInitialized()) {
-    window.Kakao.Share.sendDefault({
-      objectType: 'feed',
-      content: {
-        title: `내 도파민 결과: ${trans.title}`, 
-        description: `당신의 뇌도 자극에 중독되어 있나요? 지금 바로 확인해보세요.`,
-        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png', // 결과별 이미지가 있다면 더 좋음
-        link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
-      },
-      buttons: [{ 
-        title: '나도 측정해보기', // 클릭 유도 버튼
-        link: { mobileWebUrl: window.location.href, webUrl: window.location.href } 
-      }],
-    });
-  } else { shareViaWebAPI(); }
+    try {
+      const htmlToImage = await import('html-to-image');
+      if (!resultRef.current) return;
+
+      // 1. 결과 화면을 이미지(DataURL)로 만듭니다.
+      const dataUrl = await htmlToImage.toPng(resultRef.current, { 
+        backgroundColor: '#0a0a0a', 
+        pixelRatio: 2 
+      });
+
+      // 2. 카카오 서버에 이미지를 업로드하여 임시 URL을 받습니다.
+      // (파일 객체로 변환하여 업로드)
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'result.png', { type: 'image/png' });
+      
+      const uploadRes = await window.Kakao.Share.uploadImage({ file: [file] });
+      const sharedImageUrl = uploadRes.infos.original.url;
+
+      // 3. 업로드된 '진짜 결과 사진'과 링크를 함께 보냅니다.
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `내 도파민 결과: ${trans.title}`,
+          description: `제 민감도는 [${trans.label}] 수준이네요! 1분 만에 확인해보세요.`,
+          imageUrl: sharedImageUrl, // 👈 고정 이미지가 아닌 '업로드된 결과 사진'
+          link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+        },
+        buttons: [
+          {
+            title: '나도 테스트 하기',
+            link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
+          },
+        ],
+      });
+    } catch (e) {
+      console.error('카카오 공유 실패:', e);
+      shareViaWebAPI(); // 실패 시 기본 공유로 폴백
+    }
+  } else {
+    shareViaWebAPI();
+  }
 };
 
   const shareSNS = (platform) => {
@@ -284,10 +311,23 @@ export default function DopamineTest() {
                     ))}
                   </div>
                 </div>
-                <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
-                    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">Designed by Windvane</span>
-                </div>
+                {/* Designed by Windvane 바로 위에 주소 추가 */}
+<div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
+    <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
+      <Info size={12} /><span>{t.result?.disclaimer}</span>
+    </div>
+    
+    {/* ✅ 이미지 캡처 시 함께 저장될 URL 문구 */}
+    <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800">
+      <span className="text-[10px] text-purple-400 font-mono tracking-tighter">
+        dopamine-test-alpha.vercel.app
+      </span>
+    </div>
+
+    <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block">
+      Designed by Windvane
+    </span>
+</div>
               </div>
 
               {/* ✨ 1. 친구들에게 결과 공유하기 (SNS 버튼 모음) */}
