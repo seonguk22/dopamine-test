@@ -148,6 +148,8 @@ export default function DopamineTest() {
           title: `내 도파민 결과: ${trans.title}`,
           description: `제 민감도는 [${trans.label}] 수준이네요! 1분 만에 확인해보세요.`,
           imageUrl: sharedImageUrl, // 👈 고정 이미지가 아닌 '업로드된 결과 사진'
+          imageWidth: uploadRes.infos.original.width, 
+          imageHeight: uploadRes.infos.original.height,
           link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
         },
         buttons: [
