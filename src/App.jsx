@@ -21,7 +21,6 @@ const RESULTS_META = [
   { min: 16, color: "text-red-500", border: "border-red-500/50", bg: "from-red-500/10", marker: "bg-red-500" }
 ];
 
-// 1. 초기 언어 설정 (URL 파라미터 우선)
 const getInitialLang = () => {
   if (typeof window === 'undefined') return 'en';
   const params = new URLSearchParams(window.location.search);
@@ -62,23 +61,17 @@ export default function DopamineTest() {
   const [selectedOption, setSelectedOption] = useState(null);
   const resultRef = useRef(null);
 
-  // --- [로직: 10분에 약 1.5명씩 정직하게 증가하는 카운터] ---
   const getDynamicCount = () => {
-    // 출시 시점을 오늘 오전 0시로 설정
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
     const now = new Date().getTime();
     const diffInSeconds = Math.max(0, Math.floor((now - launchDate) / 1000));
-    
-    // 400초(약 6.6분)마다 1명씩 증가 -> 1시간에 9명 -> 24시간에 약 216명
-    return Math.floor(diffInSeconds / 400);
+    return Math.floor(diffInSeconds / 400); // 10분에 약 1.5명 증가
   };
 
   const [participantCount, setParticipantCount] = useState(getDynamicCount());
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setParticipantCount(getDynamicCount());
-    }, 10000); // 10초마다 체크하여 실시간 반영
+    const interval = setInterval(() => setParticipantCount(getDynamicCount()), 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -101,6 +94,39 @@ export default function DopamineTest() {
     }
   }, [state.step]);
 
+  // --- [공유 로직 통합] ---
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert(lang === 'ko' ? '링크가 복사되었습니다!' : 'Link copied!');
+  };
+
+  const shareViaWebAPI = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: t.start?.title2 || '도파민 습관 테스트',
+          text: t.start?.desc || '내 도파민 패턴은? 1분 만에 확인해보세요.',
+          url: window.location.href,
+        });
+      } catch (e) { copyLink(); }
+    } else {
+      copyLink();
+    }
+  };
+
+  const shareSNS = (platform) => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(t.start?.title2 || '도파민 습관 테스트');
+    let shareUrl = '';
+
+    switch (platform) {
+      case 'facebook': shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`; break;
+      case 'twitter': shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`; break;
+      default: shareViaWebAPI(); return;
+    }
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+  };
+
   const handleAnswerClick = (isYes) => {
     if (selectedOption !== null) return;
     setSelectedOption(isYes);
@@ -111,11 +137,6 @@ export default function DopamineTest() {
       dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } });
       setSelectedOption(null);
     }, 400);
-  };
-
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert(lang === 'ko' ? '링크가 복사되었습니다!' : 'Link copied!');
   };
 
   const shareResultAsImage = async () => {
@@ -139,7 +160,6 @@ export default function DopamineTest() {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
         <div className="p-6 md:p-10 relative z-10 flex-1 flex flex-col justify-center">    
 
-          {/* 1. 시작 화면 (Start Step) */}
           {state.step === 'start' && (
             <div className="text-center space-y-10 animate-in fade-in zoom-in duration-300">
               <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-2 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
@@ -160,7 +180,6 @@ export default function DopamineTest() {
                 </p>
               </div>
 
-              {/* 실시간 성장형 카운터 */}
               <div className="pt-2">
                 <p className="text-emerald-400 text-[13px] font-bold animate-pulse">
                    현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.
@@ -168,26 +187,22 @@ export default function DopamineTest() {
               </div>
 
               <div className="px-4">
-                <button 
-                  onClick={() => dispatch({ type: ACTIONS.START })} 
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl"
-                >
+                <button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 transition-all border border-purple-400/30 text-xl">
                   {t.start?.btn ?? "테스트 시작하기"}
                 </button>
               </div>
 
-              {/* 소셜 공유 아이콘 세트 */}
+              {/* --- [공유 버튼 액션 연결] --- */}
               <div className="flex justify-center gap-4 pt-6 opacity-80">
-                <button onClick={copyLink} className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700"><LinkIcon size={20} className="text-gray-300"/></button>
-                <button className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition-opacity"><Instagram size={20} className="text-white"/></button>
-                <button className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-white font-black text-sm">f</span></button>
-                <button className="w-11 h-11 rounded-full bg-black border border-neutral-700 flex items-center justify-center hover:bg-neutral-900 transition-colors"><span className="text-white font-black text-sm">X</span></button>
-                <button className="w-11 h-11 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-[#3c1e1e] text-xl">💬</span></button>
+                <button onClick={copyLink} title="복사" className="w-11 h-11 rounded-full bg-neutral-800 flex items-center justify-center hover:bg-neutral-700 transition-colors border border-neutral-700"><LinkIcon size={20} className="text-gray-300"/></button>
+                <button onClick={shareViaWebAPI} title="인스타그램/기타" className="w-11 h-11 rounded-full bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] flex items-center justify-center hover:opacity-80 transition-opacity"><Instagram size={20} className="text-white"/></button>
+                <button onClick={() => shareSNS('facebook')} title="페이스북" className="w-11 h-11 rounded-full bg-[#1877F2] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-white font-black text-sm">f</span></button>
+                <button onClick={() => shareSNS('twitter')} title="X(트위터)" className="w-11 h-11 rounded-full bg-black border border-neutral-700 flex items-center justify-center hover:bg-neutral-900 transition-colors"><span className="text-white font-black text-sm">X</span></button>
+                <button onClick={shareViaWebAPI} title="카카오톡" className="w-11 h-11 rounded-full bg-[#FEE500] flex items-center justify-center hover:opacity-80 transition-opacity"><span className="text-[#3c1e1e] text-xl">💬</span></button>
               </div>
             </div>
           )}
 
-          {/* 2. 퀴즈 화면 (Quiz Step) */}
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden">
@@ -202,7 +217,6 @@ export default function DopamineTest() {
             </div>
           )}
 
-          {/* 3. 로딩 화면 (Loading Step) */}
           {state.step === 'loading' && (
             <div className="text-center py-20 space-y-6 flex flex-col justify-center min-h-[400px] animate-in fade-in">
               <div className="relative w-24 h-24 mx-auto border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin"></div>
@@ -210,7 +224,6 @@ export default function DopamineTest() {
             </div>
           )}
 
-          {/* 4. 결과 화면 (Result Step) */}
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
@@ -248,7 +261,6 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              {/* MINUS 앱 프로모션 배너 */}
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-[1px] rounded-2xl shadow-lg mt-4">
                 <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-neutral-950 py-4 rounded-2xl flex flex-col items-center gap-1">
                   <span className="text-xs text-purple-400 font-bold">{t.result?.promo_sub}</span>
