@@ -133,19 +133,28 @@ export default function DopamineTest() {
         const htmlToImage = await import('html-to-image');
         if (!shareCardRef.current) return;
 
-        // ✅ [해결] 캡처 전 0.5초 대기 및 더블 호출로 렌더링 강제
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await htmlToImage.toPng(shareCardRef.current); 
-        
+        // ✅ 1. 폰트 로딩 및 브라우저 렌더링 프레임 대기
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise(requestAnimationFrame);
+
+        // ✅ 2. 캡처 수행 (두 번 호출할 필요 없이 옵션 최적화)
         const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
           backgroundColor: '#0a0a0a', 
           pixelRatio: 2,
           cacheBust: true 
         });
 
+        // 💡 [디버그 팁] 배포 전 S21 울트라에서 검은색이면 아래 주석 풀어서 확인 가능
+        // window.open(dataUrl);
+
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'result.png', { type: 'image/png' });
-        const uploadRes = await window.Kakao.Share.uploadImage({ file: [file] });
+
+        // ✅ 3. DataTransfer를 이용해 FileList 객체 생성 (카카오 SDK 권장 규격)
+        const dt = new DataTransfer();
+        dt.items.add(file);
+
+        const uploadRes = await window.Kakao.Share.uploadImage({ file: dt.files });
 
         window.Kakao.Share.sendDefault({
           objectType: 'feed',
@@ -153,14 +162,15 @@ export default function DopamineTest() {
             title: `내 도파민 결과: ${trans.title}`,
             description: `여러분의 패턴도 1분 만에 확인해보세요!`,
             imageUrl: uploadRes.infos.original.url,
-            imageWidth: uploadRes.infos.original.width,
-            imageHeight: uploadRes.infos.original.height,
             link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
           },
           buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
         });
         return;
-      } catch (e) { console.error('카카오 공유 실패:', e); }
+      } catch (e) {
+        console.error('카카오 공유 실패:', e);
+        return shareViaWebAPI(true); // 실패 시 링크 복사로 폴백
+      }
     }
 
     // 시작 화면에서는 링크만 공유
@@ -272,14 +282,8 @@ export default function DopamineTest() {
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               
               {/* ✅ [해결] 캡처용 숨겨진 요약 카드 배치 (검은 화면 방지) */}
-              <div ref={shareCardRef} className="fixed flex flex-col items-center justify-center space-y-8" style={{ left: '0', top: '0', width: '500px', height: '500px', backgroundColor: '#0a0a0a', zIndex: -10, opacity: 0, pointerEvents: 'none' }}>
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-neutral-800 rounded-full ring-2 ring-purple-500/50" style={{ backgroundColor: '#262626' }}><Brain size={40} className="text-purple-400" /></div>
-                <div className="text-center space-y-3"><span className={`text-sm font-black tracking-widest uppercase ${meta.color}`} style={{ display: 'block' }}>{t.result?.label} {trans.label}</span><h2 className={`text-5xl font-black ${meta.color} leading-tight`}>{trans.title}</h2></div>
-                <div className="w-full bg-neutral-900 h-5 rounded-full overflow-hidden border border-neutral-800" style={{ backgroundColor: '#171717' }}><div className={`h-full ${meta.marker}`} style={{ width: `${markerLeft}%` }} /></div>
-                <p className="text-gray-300 text-xl font-medium text-center break-keep leading-relaxed px-4" style={{ color: '#d4d4d4' }}>{trans.desc}</p>
-                <div className="pt-6 border-t border-neutral-900 w-full text-center" style={{ borderTopColor: '#171717' }}><span className="text-sm text-purple-500 font-mono tracking-tighter" style={{ color: '#a855f7' }}>dopamine-test-alpha.vercel.app</span></div>
-              </div>
-
+              <div ref={shareCardRef} className="flex flex-col items-center justify-center space-y-8"style={{width: '500px', height: '500px', backgroundColor: '#0a0a0a',    position: 'fixed', left: '-10000px', top: '0',opacity: 1, zIndex: 9999, pointerEvents: 'none'}}>  
+                 </div>
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4 text-center">
                   <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
