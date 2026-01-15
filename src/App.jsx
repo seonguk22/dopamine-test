@@ -136,10 +136,7 @@ export default function DopamineTest() {
         imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
         link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
       },
-      buttons: [{ 
-        title: isResult ? '나도 테스트 하기' : '테스트 시작하기', 
-        link: { mobileWebUrl: window.location.href, webUrl: window.location.href } 
-      }],
+      buttons: [{ title: isResult ? '나도 테스트 하기' : '테스트 시작하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
     });
   };
 
@@ -149,7 +146,6 @@ export default function DopamineTest() {
       ? `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`
       : t.start?.title2;
     const text = encodeURIComponent(resultText);
-
     if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
     else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
     else shareViaWebAPI(true);
@@ -166,27 +162,19 @@ export default function DopamineTest() {
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
         backgroundColor: '#0a0a0a', 
         pixelRatio: 2,
-        cacheBust: true,
-        width: 500,
-        height: 500
+        cacheBust: true
       });
       
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'result.png', { type: 'image/png' });
-      const shareUrl = window.location.href;
-      const shareText = `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`;
 
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: t.start?.title2, text: shareText, url: shareUrl });
+        await navigator.share({ files: [file], title: t.start?.title2, text: `${t.result?.share_msg} [${trans.title}]`, url: window.location.href });
       } else {
         const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
-        await navigator.clipboard.writeText(shareUrl);
-        alert(lang === 'ko' ? '이미지 저장 및 링크 복사 완료!' : 'Saved & Copied!');
+        copyLink();
       }
-    } catch (e) { 
-      console.error(e);
-      alert(lang === 'ko' ? '이미지 생성 실패' : 'Failed to create image'); 
-    }
+    } catch (e) { alert(lang === 'ko' ? '이미지 생성 실패' : 'Failed'); }
   };
 
   const handleAnswerClick = (isYes) => {
@@ -195,10 +183,7 @@ export default function DopamineTest() {
     const idx = state.currentQ;
     const point = QUESTIONS_META[idx]?.point ?? 0;
     if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(15);
-    setTimeout(() => {
-      dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } });
-      setSelectedOption(null);
-    }, 400);
+    setTimeout(() => { dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } }); setSelectedOption(null); }, 400);
   };
 
   return (
@@ -209,9 +194,7 @@ export default function DopamineTest() {
 
           {state.step === 'start' && (
             <div className="text-center space-y-10 animate-in fade-in zoom-in duration-300">
-              <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-2 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                <Brain size={48} className="text-purple-400" />
-              </div>
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-2 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]"><Brain size={48} className="text-purple-400" /></div>
               <div className="space-y-4">
                 <div className="inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-purple-400 text-xs font-bold tracking-wider mb-2">{t.start?.sub}</div>
                 <h1 className="text-3xl font-extrabold leading-tight text-white tracking-tight">{t.start?.title1}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">{t.start?.title2}</span></h1>
@@ -241,52 +224,52 @@ export default function DopamineTest() {
             </div>
           )}
 
-          {state.step === 'loading' && (
-            <div className="text-center py-20 space-y-6 flex flex-col justify-center min-h-[400px] animate-in fade-in">
-              <div className="relative w-24 h-24 mx-auto border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin"></div>
-              <div className="space-y-2"><h2 className="text-2xl font-bold">{t.loading?.title}</h2><p className="text-gray-400 text-sm">{t.loading?.desc}</p></div>
-            </div>
-          )}
+          {state.step === 'loading' && ( <div className="text-center py-20 space-y-6 flex flex-col justify-center min-h-[400px] animate-in fade-in"><div className="relative w-24 h-24 mx-auto border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin"></div><div className="space-y-2"><h2 className="text-2xl font-bold">{t.loading?.title}</h2><p className="text-gray-400 text-sm">{t.loading?.desc}</p></div></div> )}
 
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               
-              {/* ✅ [해결] 캡처용 숨겨진 요약 카드 배치 (줄 바꿈 최적화 반영) */}
+              {/* ✅ [해결] 인스타용 전체 결과 캡처 카드 (화면 밖 배치, opacity 1) */}
               <div 
                 ref={shareCardRef} 
                 style={{
-                  position: 'absolute', left: '-10000px', top: '0px', width: '500px', height: '500px', 
+                  position: 'fixed', left: '-10000px', top: '0px', width: '400px', 
                   backgroundColor: '#0a0a0a', opacity: 1, pointerEvents: 'none',
-                  display: 'flex', flexDirection: 'column', padding: '32px',
+                  display: 'flex', flexDirection: 'column', padding: '30px', 
                   color: 'white', fontFamily: 'sans-serif', zIndex: -1
                 }} 
               >
-                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#a855f7', marginBottom: '4px' }}>{t.result?.label} {trans.label}</div>
-                <div style={{ fontSize: '36px', fontWeight: '900', marginBottom: '12px', lineHeight: '1.2', wordBreak: 'keep-all' }}>{trans.title}</div>
-                <div style={{ width: '100%', height: '10px', backgroundColor: '#171717', borderRadius: '999px', overflow: 'hidden', border: '1px solid #262626', marginBottom: '16px' }}>
-                  <div style={{ width: `${markerLeft}%`, height: '100%', backgroundColor: '#a855f7' }} />
+                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '900', color: '#a855f7', letterSpacing: '0.1em' }}>{t.result?.label} {trans.label}</span>
+                  <h2 style={{ fontSize: '38px', fontWeight: '900', marginTop: '8px', color: '#a855f7' }}>{trans.title}</h2>
+                  <div style={{ width: '100%', height: '12px', background: '#171717', borderRadius: '999px', marginTop: '20px', position: 'relative', overflow: 'hidden', border: '1px solid #262626' }}>
+                    <div style={{ position: 'absolute', left: `${markerLeft}%`, height: '100%', width: '4px', background: 'white', boxShadow: '0 0 10px white', zIndex: 10 }} />
+                    <div style={{ display: 'flex', height: '100%' }}>
+                      {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, background: i <= resIdx ? '#a855f7' : '#171717', borderRight: '1px solid #0a0a0a' }} />)}
+                    </div>
+                  </div>
                 </div>
-                <p style={{ fontSize: '15px', lineHeight: '1.5', opacity: '0.8', marginBottom: '20px', wordBreak: 'keep-all' }}>{trans.desc}</p>
 
-                {/* 해결책 섹션: white-space: nowrap으로 태그 잘림 방지 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ background: 'rgba(23, 23, 23, 0.5)', padding: '20px', borderRadius: '20px', border: '1px solid #262626', marginBottom: '30px', textAlign: 'left' }}>
+                  <p style={{ fontSize: '16px', lineHeight: '1.6', wordBreak: 'keep-all' }}>{trans.desc}</p>
+                </div>
+
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#737373', marginBottom: '15px', letterSpacing: '0.05em' }}>{t.result?.action_title}</div>
                   {top3Answers.map((ansIdx, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'rgba(23, 23, 23, 0.8)', padding: '10px', borderRadius: '12px', border: '1px solid #262626' }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{i+1}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 'bold', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.title}</span>
-                          <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '999px', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.2)', whiteSpace: 'nowrap' }}>#{t.questions?.[ansIdx]?.cat}</span>
-                        </div>
-                        <p style={{ fontSize: '11px', color: '#a3a3a3', lineHeight: '1.3', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.desc}</p>
+                    <div key={i} style={{ background: '#171717', padding: '15px', borderRadius: '15px', border: '1px solid #262626', marginBottom: '12px', display: 'flex', gap: '12px' }}>
+                      <div style={{ width: '24px', height: '24px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>{i+1}</div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.title}</div>
+                        <p style={{ fontSize: '12px', color: '#a3a3a3', lineHeight: '1.4', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.desc}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div style={{ position: 'absolute', bottom: '24px', left: 0, right: 0, textAlign: 'center', fontSize: '12px', opacity: '0.4' }}>dopamine-test-alpha.vercel.app</div>
+                <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '12px', opacity: 0.4 }}>dopamine-test-alpha.vercel.app</div>
               </div>
 
-              {/* 실제 유저에게 보이는 결과 카드 */}
+              {/* 실제 유저 화면 (기존과 동일) */}
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4 text-center">
                   <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
@@ -296,39 +279,12 @@ export default function DopamineTest() {
                     <div className="absolute top-0 h-full w-1.5 bg-white z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
                   </div>
                 </div>
-                
-                <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
-                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20`} />
-                  <div className="relative z-10 flex items-start gap-3 text-base font-medium text-gray-200">
-                    <AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} />
-                    <p>{trans.desc}</p>
-                  </div>
-                </div>
-
+                <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}><div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20`} /><div className="relative z-10 flex items-start gap-3 text-base font-medium text-gray-200"><AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} /><p>{trans.desc}</p></div></div>
                 <div className="text-left space-y-3 mt-8">
-                  <div className="flex items-center gap-2 mb-1">
-                    <CheckSquare size={16} className="text-gray-400"/>
-                    <div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title}</div>
-                  </div>
-                  {top3Answers.map((ansIdx, i) => (
-                    <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">#{t.questions?.[ansIdx]?.cat}</span>
-                        </div>
-                        <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-2 mb-1"><CheckSquare size={16} className="text-gray-400"/><div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title}</div></div>
+                  {top3Answers.map((ansIdx, i) => ( <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3"><div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div><div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2 mb-1.5"><span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span><span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">#{t.questions?.[ansIdx]?.cat}</span></div><p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p></div></div> ))}
                 </div>
-                
-                <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
-                  <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter text-center block">dopamine-test-alpha.vercel.app</span></div>
-                  <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block text-center">Designed by Windvane</span>
-                </div>
+                <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2"><div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div><div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter text-center block">dopamine-test-alpha.vercel.app</span></div><span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block text-center">Designed by Windvane</span></div>
               </div>
 
               <div className="space-y-4 pt-8 pb-4 text-center">
@@ -342,14 +298,8 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg">
-                <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
-                <span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span>
-              </a>
-
-              <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 active:scale-95">
-                <RefreshCw size={18} /> {t.result?.retry || "Retry"}
-              </button>
+              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg"><span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span><span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span></a>
+              <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 active:scale-95"><RefreshCw size={18} /> {t.result?.retry || "Retry"}</button>
             </div>
           )}
         </div>
