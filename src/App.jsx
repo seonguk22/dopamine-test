@@ -101,7 +101,7 @@ export default function DopamineTest() {
   const meta = RESULTS_META[resIdx];
   const trans = t.levels?.[resIdx] || { title: "...", label: "...", desc: "..." };
 
-  // ✅ 1) 요청사항: HEX 매핑 추가
+  // HEX 컬러 매핑
   const LEVEL_HEX = ['#60a5fa', '#34d399', '#facc15', '#f97316', '#ef4444'];
   const levelHex = LEVEL_HEX[resIdx] || '#a855f7';
 
@@ -160,17 +160,29 @@ export default function DopamineTest() {
     else shareViaWebAPI(true);
   };
 
-  // ✅ 3) 요청사항: shareResultAsImage에 "대기 + reflow" 추가 및 안정성 강화
+  // 📸 [핵심 수정] 이미지 생성 및 공유 로직 (안정성 최우선)
   const shareResultAsImage = async () => {
-    // [모바일 대응] 클릭 컨텍스트 유지를 위해 미리 팝업 오픈 (인앱브라우저 대비)
     let popup = null;
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
-    // 모바일이면서 기본 공유가 불확실할 때 미리 창을 열어둠
-    if (isMobile && !navigator.canShare) {
+    // 모바일 등에서 새 창 제어를 위해 미리 팝업을 엽니다.
+    if (isMobile || !navigator.share) {
       popup = window.open('', '_blank');
       if (popup) {
-        popup.document.write('<div style="color:white;background:black;height:100vh;display:flex;justify-content:center;align-items:center;">이미지 생성 중...</div>');
+        popup.document.write(`
+          <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>이미지 생성 중...</title>
+            </head>
+            <body style="margin:0; background:#0a0a0a; display:flex; justify-content:center; align-items:center; height:100vh; color:white; font-family:sans-serif;">
+              <div style="text-align:center;">
+                <div style="margin-bottom:10px;">🎨</div>
+                <div>이미지를 만들고 있어요...</div>
+              </div>
+            </body>
+          </html>
+        `);
       }
     }
 
@@ -178,36 +190,28 @@ export default function DopamineTest() {
       const htmlToImage = await import('html-to-image');
       if (!shareCardRef.current) return;
 
-      // ✅ 렌더 안정화 (요청하신 부분 반영)
-      // 1. 약간의 딜레이로 DOM 반영 대기
-      await new Promise(r => setTimeout(r, 120));
-      
-      // 2. 강제 Reflow (Layout 재계산 유도)
-      if (shareCardRef.current) {
-        shareCardRef.current.getBoundingClientRect(); 
-      }
+      // 1. DOM 안정화 대기
+      await new Promise(r => setTimeout(r, 100));
 
-      // 3. 폰트 및 프레임 대기
+      // 2. 폰트 로딩 대기
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise(r => requestAnimationFrame(r));
       await new Promise(r => requestAnimationFrame(r));
 
-      // ✅ 이미지 생성
+      // 3. 이미지 생성 (옵션 수정: cacheBust false, pixelRatio 조정)
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
         backgroundColor: '#0a0a0a', 
-        pixelRatio: 2,
-        cacheBust: true
+        pixelRatio: 2,         // 선명도 유지
+        cacheBust: false,      // ❌ 중요: 로컬 이미지/아이콘 깨짐 방지 위해 끔
+        skipAutoScale: true,   // 크기 변형 방지
       });
       
-      // 디버그용 (요청사항): 생성된 이미지가 정상인지 새 탭에서 확인하려면 주석 해제
-      // if (popup) popup.location.href = dataUrl; else window.open(dataUrl, '_blank'); return;
-
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'result.png', { type: 'image/png' });
 
-      // [분기 1] 네이티브 공유 가능 시
+      // [Case A] 네이티브 공유 (모바일 앱 등)
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        if (popup) popup.close(); 
+        if (popup) popup.close(); // 공유 창 뜨면 대기화면 닫기
         await navigator.share({ 
           files: [file], 
           title: t.start?.title2, 
@@ -215,26 +219,28 @@ export default function DopamineTest() {
           url: window.location.href 
         });
       } 
-      // [분기 2] 미리 열어둔 팝업이 있는 경우 (모바일 인앱 등) -> 이미지 뷰어로 전환
+      // [Case B] 공유 불가 -> 미리 열어둔 팝업에 이미지 출력 (가장 확실한 방법)
       else if (popup) {
+        // dataUrl 이동 대신 이미지를 직접 씁니다 (about:blank 방지)
         popup.document.body.innerHTML = `
-          <style>body{margin:0;background:#0a0a0a;display:flex;justify-content:center;align-items:center;height:100vh;}img{max-width:100%;height:auto;}</style>
-          <img src="${dataUrl}" alt="Result" />
+          <div style="background:#0a0a0a; width:100%; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+            <img src="${dataUrl}" style="max-width:100%; height:auto; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.5);" alt="Result" />
+            <p style="color:#888; font-size:12px; margin-top:20px; font-family:sans-serif;">이미지를 꾹 눌러 저장하세요</p>
+          </div>
         `;
       } 
-      // [분기 3] PC 다운로드
+      // [Case C] PC 등 나머지 -> 다운로드 트리거
       else {
         const link = document.createElement('a'); 
         link.download = 'result.png'; 
         link.href = dataUrl; 
         link.click();
-        copyLink(); 
       }
 
     } catch (e) { 
-      if (popup) popup.close();
       console.error(e);
-      alert(lang === 'ko' ? '이미지 생성 실패' : 'Failed'); 
+      if (popup) popup.close();
+      alert(lang === 'ko' ? '이미지 생성에 실패했습니다.' : 'Failed to generate image.'); 
     }
   };
 
@@ -250,29 +256,31 @@ export default function DopamineTest() {
     }, 400);
   };
 
-  // ✅ 2) 요청사항: CaptureCard style 교체 (zIndex, transform 방식, font)
+  // 🖼️ [핵심 수정] 캡처용 카드 (가장 안전한 스타일링: absolute + left:-9999px + opacity:1)
   const CaptureCard = (
     <div 
       ref={shareCardRef} 
       style={{
-        position: 'fixed',
-        left: '0px',
+        // 화면 밖으로 보내되, '투명'하지 않게 설정 (중요)
+        position: 'absolute',
+        left: '-9999px',  
         top: '0px',
-        transform: 'translateX(-120%)', // 화면 밖으로 이동
         width: '400px',
-        backgroundColor: '#0a0a0a',
-        opacity: 0.001,                // 0이면 렌더 스킵될 수 있어서 0.001 (눈엔 안 보임)
+        
+        // 투명도 1이어야 캡처 라이브러리가 내용을 그립니다.
+        opacity: 1,      
+        
+        zIndex: -1,
         pointerEvents: 'none',
         display: 'flex',
         flexDirection: 'column',
         padding: '30px',
+        backgroundColor: '#0a0a0a',
         color: 'white',
         fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-        zIndex: 2147483647,            // 최상단
       }} 
     >
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        {/* 요청사항: Color를 HEX 변수로 적용 */}
         <span style={{ fontSize: '14px', fontWeight: '900', color: levelHex, letterSpacing: '0.1em' }}>
           {t.result?.label} {trans.label}
         </span>
@@ -382,7 +390,7 @@ export default function DopamineTest() {
         </div>
       </div>
       <Analytics />
-      {/* ✅ Portal: body 직속으로 렌더링하여 부모 레이아웃의 Clipping 방지 */}
+      {/* ✅ Portal: body 직속으로 렌더링 */}
       {mounted && createPortal(CaptureCard, document.body)}
     </div>
   );
