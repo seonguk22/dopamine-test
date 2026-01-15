@@ -128,30 +128,32 @@ export default function DopamineTest() {
     initKakao();
     if (!window.Kakao || !window.Kakao.isInitialized()) return shareViaWebAPI(true);
 
+    // ✅ 1) 클릭 즉시 새 창을 먼저 열어 '제스처 컨텍스트' 유지
+    const w = window.open('about:blank', '_blank');
+
     if (state.step === 'result') {
       try {
         const htmlToImage = await import('html-to-image');
         if (!shareCardRef.current) return;
 
-        // ✅ 1. 폰트 로딩 및 브라우저 렌더링 프레임 대기
+        // ✅ 2) 렌더링 안정화: 폰트 대기 및 2프레임 지연
         if (document.fonts?.ready) await document.fonts.ready;
         await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
 
-        // ✅ 2. 캡처 수행 (두 번 호출할 필요 없이 옵션 최적화)
         const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
           backgroundColor: '#0a0a0a', 
           pixelRatio: 2,
           cacheBust: true 
         });
-        window.open(dataUrl);
 
-        // 💡 [디버그 팁] 배포 전 S21 울트라에서 검은색이면 아래 주석 풀어서 확인 가능
-        // window.open(dataUrl);
+        // ✅ 3) 디버깅: dataUrl 상태 확인 및 URL 이동
+        console.log('dataUrl head:', dataUrl.slice(0, 30)); // 'data:image/png;base64...' 확인용
+        if (w) w.location.href = dataUrl;
 
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'result.png', { type: 'image/png' });
 
-        // ✅ 3. DataTransfer를 이용해 FileList 객체 생성 (카카오 SDK 권장 규격)
         const dt = new DataTransfer();
         dt.items.add(file);
 
@@ -167,8 +169,8 @@ export default function DopamineTest() {
           },
           buttons: [{ title: '나도 테스트 하기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }],
         });
-        return;
       } catch (e) {
+        if (w) w.close(); // 실패 시 열린 창 닫기
         console.error('카카오 공유 실패:', e);
         return shareViaWebAPI(true); // 실패 시 링크 복사로 폴백
       }
@@ -283,8 +285,7 @@ export default function DopamineTest() {
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               
               {/* ✅ [해결] 캡처용 숨겨진 요약 카드 배치 (검은 화면 방지) */}
-              <div ref={shareCardRef} className="flex flex-col items-center justify-center space-y-8"style={{width: '500px', height: '500px', backgroundColor: '#0a0a0a',    position: 'fixed', left: '-10000px', top: '0',opacity: 1, zIndex: 9999, pointerEvents: 'none'}}>  
-                 </div>
+              <div ref={shareCardRef} style={{position: 'absolute',left: '-10000px', top: '0px', width: '500px', height: '500px', backgroundColor: '#0a0a0a', opacity: 1, pointerEvents: 'none',}}  className="flex flex-col items-center justify-center space-y-8">               </div>
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4 text-center">
                   <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
