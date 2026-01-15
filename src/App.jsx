@@ -128,7 +128,7 @@ export default function DopamineTest() {
     initKakao();
     if (!window.Kakao || !window.Kakao.isInitialized()) return shareViaWebAPI(true);
 
-    // ✅ 클릭 즉시 제스처 보호를 위해 창 열기
+    // ✅ 클릭 즉시 사용자 제스처를 보호하기 위해 새 창 미리 열기
     const w = window.open('about:blank', '_blank');
 
     if (state.step === 'result') {
@@ -136,6 +136,7 @@ export default function DopamineTest() {
         const htmlToImage = await import('html-to-image');
         if (!shareCardRef.current) throw new Error('No ref');
 
+        // ✅ 폰트 및 렌더링 안정화 대기
         if (document.fonts?.ready) await document.fonts.ready;
         await new Promise(requestAnimationFrame);
         await new Promise(requestAnimationFrame);
@@ -146,8 +147,12 @@ export default function DopamineTest() {
           cacheBust: true 
         });
 
-        // 디버그: 새 창에 이미지 투사
-        if (w) w.location.href = dataUrl;
+        // ✅ 디버그: 새 창에 이미지 즉시 투사 (검은 화면 여부 확인용)
+        if (w) {
+          w.document.open();
+          w.document.write(`<html><body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;"><img src="${dataUrl}" style="max-width:100%;height:auto;"/></body></html>`);
+          w.document.close();
+        }
 
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], 'result.png', { type: 'image/png' });
@@ -170,12 +175,14 @@ export default function DopamineTest() {
       } catch (e) {
         console.error('카카오 공유 실패:', e);
         if (w) w.close();
-        // ✅ [해결] 실패 시 링크 복사로 폴백 수행
+        // ✅ [해결] 실패 시 링크 복사로 폴백 수행 (절대 빼먹지 않음)
         return shareViaWebAPI(true); 
       }
+      return;
     }
 
-    // 시작 화면에서는 링크만 공유
+    // 시작 화면 공유 로직
+    if (w) w.close();
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
@@ -189,8 +196,13 @@ export default function DopamineTest() {
   };
 
   const shareSNS = (platform) => {
-    const url = encodeURIComponent(window.location.href);
     const isResult = state.step === 'result';
+    // ✅ 페이스북 공유 시 파라미터 추가하여 개별 미리보기 유도
+    const shareUrl = isResult 
+      ? `${window.location.origin}${window.location.pathname}?res=${resIdx}`
+      : window.location.href;
+    const url = encodeURIComponent(shareUrl);
+    
     const resultText = isResult 
       ? `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`
       : (t.start?.title2 || "도파민 습관 테스트");
@@ -283,89 +295,88 @@ export default function DopamineTest() {
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
               
-              {/* ✅ [해결] 캡처용 숨겨진 요약 카드 배치 (검은 화면 방지) */}
+              {/* ✅ [해결] 캡처용 요약 카드: 절대 비워두지 말고 실제 데이터를 꽉 채움 */}
               <div 
-      ref={shareCardRef} 
-      style={{
-        position: 'absolute',
-        left: '-10000px', 
-        top: '0px', 
-        width: '500px', 
-        height: '500px', 
-        backgroundColor: '#0a0a0a', 
-        opacity: 1, 
-        pointerEvents: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '40px',
-        color: 'white',
-        fontFamily: 'sans-serif'
-      }} 
-      className="flex flex-col items-center justify-center space-y-8"
-    >
-      <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#a855f7', marginBottom: '8px' }}>
-        {t.result?.label} {trans.label}
-      </div>
-      <div style={{ fontSize: '48px', fontWeight: '900', marginBottom: '20px', textAlign: 'center' }}>
-        {trans.title}
-      </div>
-      <div style={{ width: '100%', height: '16px', backgroundColor: '#171717', borderRadius: '999px', overflow: 'hidden', border: '1px solid #262626', marginBottom: '24px' }}>
-        <div style={{ width: `${markerLeft}%`, height: '100%', backgroundColor: '#a855f7' }} />
-      </div>
-      <p style={{ fontSize: '20px', lineHeight: '1.6', opacity: '0.9', textAlign: 'center', wordBreak: 'keep-all' }}>
-        {trans.desc}
-      </p>
-      <div style={{ position: 'absolute', bottom: '30px', fontSize: '14px', opacity: '0.5' }}>
-        dopamine-test-alpha.vercel.app
-      </div>
-    </div>
-
-    {/* 실제 유저에게 보이는 결과 카드 */}
-    <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
-      <div className="space-y-4 text-center">
-        <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
-        <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
-        <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
-          {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
-          <div className="absolute top-0 h-full w-1.5 bg-white z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
-        </div>
-      </div>
-      
-      <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
-        <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20`} />
-        <div className="relative z-10 flex items-start gap-3 text-base font-medium text-gray-200">
-          <AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} />
-          <p>{trans.desc}</p>
-        </div>
-      </div>
-
-      <div className="text-left space-y-3 mt-8">
-        <div className="flex items-center gap-2 mb-1">
-          <CheckSquare size={16} className="text-gray-400"/>
-          <div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title}</div>
-        </div>
-        {top3Answers.map((ansIdx, i) => (
-          <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
-            <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                <span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">#{t.questions?.[ansIdx]?.cat}</span>
+                ref={shareCardRef} 
+                style={{
+                  position: 'absolute',
+                  left: '-10000px', 
+                  top: '0px', 
+                  width: '500px', 
+                  height: '500px', 
+                  backgroundColor: '#0a0a0a', 
+                  opacity: 1, 
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  padding: '40px',
+                  color: 'white',
+                  fontFamily: 'sans-serif'
+                }} 
+                className="flex flex-col items-center justify-center space-y-8"
+              >
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#a855f7', marginBottom: '8px' }}>
+                  {t.result?.label} {trans.label}
+                </div>
+                <div style={{ fontSize: '48px', fontWeight: '900', marginBottom: '20px', textAlign: 'center' }}>
+                  {trans.title}
+                </div>
+                <div style={{ width: '100%', height: '16px', backgroundColor: '#171717', borderRadius: '999px', overflow: 'hidden', border: '1px solid #262626', marginBottom: '24px' }}>
+                  <div style={{ width: `${markerLeft}%`, height: '100%', backgroundColor: '#a855f7' }} />
+                </div>
+                <p style={{ fontSize: '20px', lineHeight: '1.6', opacity: '0.9', textAlign: 'center', wordBreak: 'keep-all' }}>
+                  {trans.desc}
+                </p>
+                <div style={{ position: 'absolute', bottom: '30px', fontSize: '14px', opacity: '0.5' }}>
+                  dopamine-test-alpha.vercel.app
+                </div>
               </div>
-              <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {/* 하단 디자인 요소 (생략된 경우 추가 가능) */}
-      <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
-        <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
-        <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter text-center block">dopamine-test-alpha.vercel.app</span></div>
-        <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block text-center">Designed by Windvane</span>
-      </div>
-    </div>
+
+              {/* 실제 유저에게 보이는 결과 카드 */}
+              <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
+                <div className="space-y-4 text-center">
+                  <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
+                  <h2 className={`text-4xl font-black mt-1 ${meta.color} drop-shadow-lg`}>{trans.title}</h2>
+                  <div className="w-full bg-neutral-900 h-3 rounded-full overflow-hidden relative border border-neutral-800 flex">
+                    {[0, 1, 2, 3, 4].map(i => <div key={i} className={`h-full flex-1 ${i <= resIdx ? meta.marker : 'bg-neutral-900'}`} />)}
+                    <div className="absolute top-0 h-full w-1.5 bg-white z-10 shadow-[0_0_10px_white]" style={{ left: `${markerLeft}%` }} />
+                  </div>
+                </div>
+                
+                <div className={`bg-neutral-900/50 rounded-2xl p-5 border ${meta.border} text-left mt-6 relative overflow-hidden`}>
+                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} to-transparent opacity-20`} />
+                  <div className="relative z-10 flex items-start gap-3 text-base font-medium text-gray-200">
+                    <AlertTriangle className={`${meta.color} shrink-0 mt-1`} size={20} />
+                    <p>{trans.desc}</p>
+                  </div>
+                </div>
+
+                <div className="text-left space-y-3 mt-8">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckSquare size={16} className="text-gray-400"/>
+                    <div className="text-sm font-bold text-gray-400 tracking-wider uppercase">{t.result?.action_title}</div>
+                  </div>
+                  {top3Answers.map((ansIdx, i) => (
+                    <div key={i} className="bg-neutral-900/80 border border-neutral-800 rounded-xl p-4 flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-xs shrink-0 mt-0.5 border border-purple-500/30 font-bold">{i+1}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className="text-sm font-bold text-white leading-tight">{t.questions?.[ansIdx]?.title}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">#{t.questions?.[ansIdx]?.cat}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-normal">{t.questions?.[ansIdx]?.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-8 pt-4 border-t border-neutral-900 text-center space-y-2">
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600"><Info size={12} /><span>{t.result?.disclaimer}</span></div>
+                  <div className="py-1 px-3 bg-neutral-900 rounded-full inline-block border border-neutral-800"><span className="text-[10px] text-purple-400 font-mono tracking-tighter text-center block">dopamine-test-alpha.vercel.app</span></div>
+                  <span className="text-[10px] text-neutral-700 font-bold tracking-widest uppercase block text-center">Designed by Windvane</span>
+                </div>
+              </div>
 
               <div className="space-y-4 pt-8 pb-4 text-center">
                 <p className="text-sm text-gray-400 font-bold tracking-tight">{t.result?.share_title}</p>
