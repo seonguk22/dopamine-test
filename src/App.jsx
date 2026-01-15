@@ -101,6 +101,10 @@ export default function DopamineTest() {
   const meta = RESULTS_META[resIdx];
   const trans = t.levels?.[resIdx] || { title: "...", label: "...", desc: "..." };
 
+  // ✅ 1) 요청사항: HEX 매핑 추가
+  const LEVEL_HEX = ['#60a5fa', '#34d399', '#facc15', '#f97316', '#ef4444'];
+  const levelHex = LEVEL_HEX[resIdx] || '#a855f7';
+
   useEffect(() => {
     if (state.step === 'loading') {
       const interval = setInterval(() => dispatch({ type: ACTIONS.LOADING_TICK }), 30);
@@ -156,30 +160,82 @@ export default function DopamineTest() {
     else shareViaWebAPI(true);
   };
 
+  // ✅ 3) 요청사항: shareResultAsImage에 "대기 + reflow" 추가 및 안정성 강화
   const shareResultAsImage = async () => {
+    // [모바일 대응] 클릭 컨텍스트 유지를 위해 미리 팝업 오픈 (인앱브라우저 대비)
+    let popup = null;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // 모바일이면서 기본 공유가 불확실할 때 미리 창을 열어둠
+    if (isMobile && !navigator.canShare) {
+      popup = window.open('', '_blank');
+      if (popup) {
+        popup.document.write('<div style="color:white;background:black;height:100vh;display:flex;justify-content:center;align-items:center;">이미지 생성 중...</div>');
+      }
+    }
+
     try {
       const htmlToImage = await import('html-to-image');
       if (!shareCardRef.current) return;
+
+      // ✅ 렌더 안정화 (요청하신 부분 반영)
+      // 1. 약간의 딜레이로 DOM 반영 대기
+      await new Promise(r => setTimeout(r, 120));
+      
+      // 2. 강제 Reflow (Layout 재계산 유도)
+      if (shareCardRef.current) {
+        shareCardRef.current.getBoundingClientRect(); 
+      }
+
+      // 3. 폰트 및 프레임 대기
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise(r => requestAnimationFrame(r));
       await new Promise(r => requestAnimationFrame(r));
 
+      // ✅ 이미지 생성
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
         backgroundColor: '#0a0a0a', 
         pixelRatio: 2,
         cacheBust: true
       });
       
+      // 디버그용 (요청사항): 생성된 이미지가 정상인지 새 탭에서 확인하려면 주석 해제
+      // if (popup) popup.location.href = dataUrl; else window.open(dataUrl, '_blank'); return;
+
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], 'result.png', { type: 'image/png' });
 
+      // [분기 1] 네이티브 공유 가능 시
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: t.start?.title2, text: `${t.result?.share_msg} [${trans.title}]`, url: window.location.href });
-      } else {
-        const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
-        copyLink();
+        if (popup) popup.close(); 
+        await navigator.share({ 
+          files: [file], 
+          title: t.start?.title2, 
+          text: `${t.result?.share_msg} [${trans.title}]`, 
+          url: window.location.href 
+        });
+      } 
+      // [분기 2] 미리 열어둔 팝업이 있는 경우 (모바일 인앱 등) -> 이미지 뷰어로 전환
+      else if (popup) {
+        popup.document.body.innerHTML = `
+          <style>body{margin:0;background:#0a0a0a;display:flex;justify-content:center;align-items:center;height:100vh;}img{max-width:100%;height:auto;}</style>
+          <img src="${dataUrl}" alt="Result" />
+        `;
+      } 
+      // [분기 3] PC 다운로드
+      else {
+        const link = document.createElement('a'); 
+        link.download = 'result.png'; 
+        link.href = dataUrl; 
+        link.click();
+        copyLink(); 
       }
-    } catch (e) { alert(lang === 'ko' ? '이미지 생성 실패' : 'Failed'); }
+
+    } catch (e) { 
+      if (popup) popup.close();
+      console.error(e);
+      alert(lang === 'ko' ? '이미지 생성 실패' : 'Failed'); 
+    }
   };
 
   const handleAnswerClick = (isYes) => {
@@ -194,19 +250,32 @@ export default function DopamineTest() {
     }, 400);
   };
 
-  // ✅ [복구] 인스타 공유용 "전체 결과 카드" (Portal을 통해 body 직속 렌더링)
+  // ✅ 2) 요청사항: CaptureCard style 교체 (zIndex, transform 방식, font)
   const CaptureCard = (
     <div 
       ref={shareCardRef} 
       style={{
-        position: 'fixed', left: '-10000px', top: '0px', width: '400px', 
-        backgroundColor: '#0a0a0a', opacity: 1, pointerEvents: 'none',
-        display: 'flex', flexDirection: 'column', padding: '30px', 
-        color: 'white', fontFamily: 'sans-serif', zIndex: -1
+        position: 'fixed',
+        left: '0px',
+        top: '0px',
+        transform: 'translateX(-120%)', // 화면 밖으로 이동
+        width: '400px',
+        backgroundColor: '#0a0a0a',
+        opacity: 0.001,                // 0이면 렌더 스킵될 수 있어서 0.001 (눈엔 안 보임)
+        pointerEvents: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '30px',
+        color: 'white',
+        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
+        zIndex: 2147483647,            // 최상단
       }} 
     >
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <span style={{ fontSize: '14px', fontWeight: '900', color: meta.color.replace('text-', '#'), letterSpacing: '0.1em' }}>{t.result?.label} {trans.label}</span>
+        {/* 요청사항: Color를 HEX 변수로 적용 */}
+        <span style={{ fontSize: '14px', fontWeight: '900', color: levelHex, letterSpacing: '0.1em' }}>
+          {t.result?.label} {trans.label}
+        </span>
         <h2 style={{ fontSize: '38px', fontWeight: '900', marginTop: '8px', color: '#fff' }}>{trans.title}</h2>
         <div style={{ width: '100%', height: '12px', background: '#171717', borderRadius: '999px', marginTop: '20px', position: 'relative', overflow: 'hidden', border: '1px solid #262626' }}>
           <div style={{ position: 'absolute', left: `${markerLeft}%`, height: '100%', width: '4px', background: 'white', boxShadow: '0 0 10px white', zIndex: 10 }} />
