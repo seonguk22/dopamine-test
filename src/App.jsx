@@ -143,6 +143,7 @@ export default function DopamineTest() {
           pixelRatio: 2,
           cacheBust: true 
         });
+        window.open(dataUrl);
 
         // 💡 [디버그 팁] 배포 전 S21 울트라에서 검은색이면 아래 주석 풀어서 확인 가능
         // window.open(dataUrl);
