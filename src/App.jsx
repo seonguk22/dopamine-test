@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import { TRANSLATIONS } from './translations';
 
-// 데이터 정의
 const QUESTIONS_META = [
   { point: 1 }, { point: 1 }, { point: 2 }, { point: 1 }, { point: 2 }, { point: 2 },
   { point: 1 }, { point: 2 }, { point: 2 }, { point: 2 }, { point: 1 }, { point: 2 }
@@ -61,21 +60,22 @@ export default function DopamineTest() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedOption, setSelectedOption] = useState(null);
   const resultRef = useRef(null);
+  const shareCardRef = useRef(null);
 
-  // 참여자 수 로직
   const getDynamicCount = () => {
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
     const now = new Date().getTime();
     const diffInSeconds = Math.max(0, Math.floor((now - launchDate) / 1000));
     return Math.floor(diffInSeconds / 400); 
   };
+
   const [participantCount, setParticipantCount] = useState(getDynamicCount());
+
   useEffect(() => {
     const interval = setInterval(() => setParticipantCount(getDynamicCount()), 10000);
     return () => clearInterval(interval);
   }, []);
 
-  // 카카오 초기화
   const initKakao = () => {
     if (typeof window !== 'undefined' && window.Kakao) {
       if (!window.Kakao.isInitialized()) {
@@ -83,9 +83,9 @@ export default function DopamineTest() {
       }
     }
   };
+
   useEffect(() => { initKakao(); }, []);
 
-  // 결과 계산 로직
   const MAX_SCORE = useMemo(() => QUESTIONS_META.reduce((sum, q) => sum + q.point, 0), []);
   const markerLeft = useMemo(() => (!MAX_SCORE ? 0 : Math.min(98, (state.score / MAX_SCORE) * 100)), [state.score, MAX_SCORE]);
   const top3Answers = useMemo(() => [...state.answers].sort((a, b) => (QUESTIONS_META[b]?.point || 0) - (QUESTIONS_META[a]?.point || 0)).slice(0, 3), [state.answers]);
@@ -124,20 +124,16 @@ export default function DopamineTest() {
     } else { copyLink(); }
   };
 
-  // ✅ [핵심] 시작/결과 페이지별 분기 공유 로직 (안정적인 고정 이미지 방식)
   const shareToKakao = () => {
     initKakao();
     if (!window.Kakao || !window.Kakao.isInitialized()) return shareViaWebAPI(true);
-
     const isResult = state.step === 'result';
-    
     window.Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        // 결과 여부에 따라 제목과 설명이 동적으로 변함
         title: isResult ? `내 도파민 결과: ${trans.title}` : t.start?.title2,
         description: isResult ? `${trans.desc.slice(0, 45)}...` : t.start?.desc,
-        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png', // 안정적인 메인 대표 이미지
+        imageUrl: 'https://dopamine-test-alpha.vercel.app/og-image.png',
         link: { mobileWebUrl: window.location.href, webUrl: window.location.href },
       },
       buttons: [{ 
@@ -159,6 +155,40 @@ export default function DopamineTest() {
     else shareViaWebAPI(true);
   };
 
+  const shareResultAsImage = async () => {
+    try {
+      const htmlToImage = await import('html-to-image');
+      if (!shareCardRef.current) return;
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(r => requestAnimationFrame(r));
+      await new Promise(r => requestAnimationFrame(r));
+
+      const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
+        backgroundColor: '#0a0a0a', 
+        pixelRatio: 2,
+        cacheBust: true,
+        width: 500,
+        height: 500
+      });
+      
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'result.png', { type: 'image/png' });
+      const shareUrl = window.location.href;
+      const shareText = `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`;
+
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: t.start?.title2, text: shareText, url: shareUrl });
+      } else {
+        const link = document.createElement('a'); link.download = 'result.png'; link.href = dataUrl; link.click();
+        await navigator.clipboard.writeText(shareUrl);
+        alert(lang === 'ko' ? '이미지 저장 및 링크 복사 완료!' : 'Saved & Copied!');
+      }
+    } catch (e) { 
+      console.error(e);
+      alert(lang === 'ko' ? '이미지 생성 실패' : 'Failed to create image'); 
+    }
+  };
+
   const handleAnswerClick = (isYes) => {
     if (selectedOption !== null) return;
     setSelectedOption(isYes);
@@ -177,7 +207,6 @@ export default function DopamineTest() {
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500"></div>
         <div className="p-6 md:p-10 relative z-10 flex-1 flex flex-col justify-center">    
 
-          {/* 시작 단계 */}
           {state.step === 'start' && (
             <div className="text-center space-y-10 animate-in fade-in zoom-in duration-300">
               <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-800 rounded-full mb-2 ring-2 ring-purple-500/50 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
@@ -200,7 +229,6 @@ export default function DopamineTest() {
             </div>
           )}
 
-          {/* 퀴즈 단계 */}
           {state.step === 'quiz' && (
             <div key={state.currentQ} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="w-full bg-neutral-700 h-2 rounded-full overflow-hidden"><div className="bg-purple-500 h-full transition-all duration-300" style={{ width: `${((state.currentQ + 1) / QUESTIONS_META.length) * 100}%` }} /></div>
@@ -213,7 +241,6 @@ export default function DopamineTest() {
             </div>
           )}
 
-          {/* 로딩 단계 */}
           {state.step === 'loading' && (
             <div className="text-center py-20 space-y-6 flex flex-col justify-center min-h-[400px] animate-in fade-in">
               <div className="relative w-24 h-24 mx-auto border-4 border-neutral-800 border-t-purple-500 rounded-full animate-spin"></div>
@@ -221,9 +248,45 @@ export default function DopamineTest() {
             </div>
           )}
 
-          {/* 결과 단계 */}
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
+              
+              {/* ✅ [해결] 캡처용 숨겨진 요약 카드 배치 (줄 바꿈 최적화 반영) */}
+              <div 
+                ref={shareCardRef} 
+                style={{
+                  position: 'absolute', left: '-10000px', top: '0px', width: '500px', height: '500px', 
+                  backgroundColor: '#0a0a0a', opacity: 1, pointerEvents: 'none',
+                  display: 'flex', flexDirection: 'column', padding: '32px',
+                  color: 'white', fontFamily: 'sans-serif', zIndex: -1
+                }} 
+              >
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#a855f7', marginBottom: '4px' }}>{t.result?.label} {trans.label}</div>
+                <div style={{ fontSize: '36px', fontWeight: '900', marginBottom: '12px', lineHeight: '1.2', wordBreak: 'keep-all' }}>{trans.title}</div>
+                <div style={{ width: '100%', height: '10px', backgroundColor: '#171717', borderRadius: '999px', overflow: 'hidden', border: '1px solid #262626', marginBottom: '16px' }}>
+                  <div style={{ width: `${markerLeft}%`, height: '100%', backgroundColor: '#a855f7' }} />
+                </div>
+                <p style={{ fontSize: '15px', lineHeight: '1.5', opacity: '0.8', marginBottom: '20px', wordBreak: 'keep-all' }}>{trans.desc}</p>
+
+                {/* 해결책 섹션: white-space: nowrap으로 태그 잘림 방지 */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {top3Answers.map((ansIdx, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'rgba(23, 23, 23, 0.8)', padding: '10px', borderRadius: '12px', border: '1px solid #262626' }}>
+                      <div style={{ width: '20px', height: '20px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', flexShrink: 0 }}>{i+1}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 'bold', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.title}</span>
+                          <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '999px', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', border: '1px solid rgba(168, 85, 247, 0.2)', whiteSpace: 'nowrap' }}>#{t.questions?.[ansIdx]?.cat}</span>
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#a3a3a3', lineHeight: '1.3', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ position: 'absolute', bottom: '24px', left: 0, right: 0, textAlign: 'center', fontSize: '12px', opacity: '0.4' }}>dopamine-test-alpha.vercel.app</div>
+              </div>
+
+              {/* 실제 유저에게 보이는 결과 카드 */}
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4 text-center">
                   <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
@@ -268,19 +331,17 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              {/* 공유 섹션 */}
               <div className="space-y-4 pt-8 pb-4 text-center">
                 <p className="text-sm text-gray-400 font-bold tracking-tight">{t.result?.share_title}</p>
                 <div className="flex justify-center gap-4">
                   <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
-                  <button onClick={() => shareViaWebAPI(true)} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
+                  <button onClick={shareResultAsImage} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
                   <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
                   <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
                   <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
                 </div>
               </div>
 
-              {/* MINUS 앱 홍보 */}
               <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg">
                 <span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span>
                 <span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span>
