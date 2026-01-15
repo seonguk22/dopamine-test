@@ -2,7 +2,6 @@
 
 import { Analytics } from '@vercel/analytics/react';
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { 
   Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
   CheckCircle, XCircle, CheckSquare, Info, Link as LinkIcon 
@@ -60,11 +59,8 @@ export default function DopamineTest() {
   const t = useMemo(() => TRANSLATIONS[lang] || TRANSLATIONS.en, [lang]);
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [mounted, setMounted] = useState(false);
   const resultRef = useRef(null);
-  const shareCardRef = useRef(null);
-
-  useEffect(() => { setMounted(true); }, []);
+  // shareCardRef 제거됨 (이미지 생성 안 함)
 
   const getDynamicCount = () => {
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
@@ -100,10 +96,6 @@ export default function DopamineTest() {
 
   const meta = RESULTS_META[resIdx];
   const trans = t.levels?.[resIdx] || { title: "...", label: "...", desc: "..." };
-
-  // HEX 컬러 매핑
-  const LEVEL_HEX = ['#60a5fa', '#34d399', '#facc15', '#f97316', '#ef4444'];
-  const levelHex = LEVEL_HEX[resIdx] || '#a855f7';
 
   useEffect(() => {
     if (state.step === 'loading') {
@@ -157,91 +149,7 @@ export default function DopamineTest() {
 
     if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
     else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-    else shareViaWebAPI(true);
-  };
-
-  // 📸 [핵심 수정] 이미지 생성 및 공유 로직 (안정성 최우선)
-  const shareResultAsImage = async () => {
-    let popup = null;
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    // 모바일 등에서 새 창 제어를 위해 미리 팝업을 엽니다.
-    if (isMobile || !navigator.share) {
-      popup = window.open('', '_blank');
-      if (popup) {
-        popup.document.write(`
-          <html>
-            <head>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>이미지 생성 중...</title>
-            </head>
-            <body style="margin:0; background:#0a0a0a; display:flex; justify-content:center; align-items:center; height:100vh; color:white; font-family:sans-serif;">
-              <div style="text-align:center;">
-                <div style="margin-bottom:10px;">🎨</div>
-                <div>이미지를 만들고 있어요...</div>
-              </div>
-            </body>
-          </html>
-        `);
-      }
-    }
-
-    try {
-      const htmlToImage = await import('html-to-image');
-      if (!shareCardRef.current) return;
-
-      // 1. DOM 안정화 대기
-      await new Promise(r => setTimeout(r, 100));
-
-      // 2. 폰트 로딩 대기
-      if (document.fonts?.ready) await document.fonts.ready;
-      await new Promise(r => requestAnimationFrame(r));
-      await new Promise(r => requestAnimationFrame(r));
-
-      // 3. 이미지 생성 (옵션 수정: cacheBust false, pixelRatio 조정)
-      const dataUrl = await htmlToImage.toPng(shareCardRef.current, { 
-        backgroundColor: '#0a0a0a', 
-        pixelRatio: 2,         // 선명도 유지
-        cacheBust: false,      // ❌ 중요: 로컬 이미지/아이콘 깨짐 방지 위해 끔
-        skipAutoScale: true,   // 크기 변형 방지
-      });
-      
-      const blob = await (await fetch(dataUrl)).blob();
-      const file = new File([blob], 'result.png', { type: 'image/png' });
-
-      // [Case A] 네이티브 공유 (모바일 앱 등)
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        if (popup) popup.close(); // 공유 창 뜨면 대기화면 닫기
-        await navigator.share({ 
-          files: [file], 
-          title: t.start?.title2, 
-          text: `${t.result?.share_msg} [${trans.title}]`, 
-          url: window.location.href 
-        });
-      } 
-      // [Case B] 공유 불가 -> 미리 열어둔 팝업에 이미지 출력 (가장 확실한 방법)
-      else if (popup) {
-        // dataUrl 이동 대신 이미지를 직접 씁니다 (about:blank 방지)
-        popup.document.body.innerHTML = `
-          <div style="background:#0a0a0a; width:100%; min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
-            <img src="${dataUrl}" style="max-width:100%; height:auto; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.5);" alt="Result" />
-            <p style="color:#888; font-size:12px; margin-top:20px; font-family:sans-serif;">이미지를 꾹 눌러 저장하세요</p>
-          </div>
-        `;
-      } 
-      // [Case C] PC 등 나머지 -> 다운로드 트리거
-      else {
-        const link = document.createElement('a'); 
-        link.download = 'result.png'; 
-        link.href = dataUrl; 
-        link.click();
-      }
-
-    } catch (e) { 
-      console.error(e);
-      if (popup) popup.close();
-      alert(lang === 'ko' ? '이미지 생성에 실패했습니다.' : 'Failed to generate image.'); 
-    }
+    else shareViaWebAPI(true); // Instagram 등 기타는 Web Share API 호출
   };
 
   const handleAnswerClick = (isYes) => {
@@ -255,63 +163,6 @@ export default function DopamineTest() {
       setSelectedOption(null);
     }, 400);
   };
-
-  // 🖼️ [핵심 수정] 캡처용 카드 (가장 안전한 스타일링: absolute + left:-9999px + opacity:1)
-  const CaptureCard = (
-    <div 
-      ref={shareCardRef} 
-      style={{
-        // 화면 밖으로 보내되, '투명'하지 않게 설정 (중요)
-        position: 'absolute',
-        left: '-9999px',  
-        top: '0px',
-        width: '400px',
-        
-        // 투명도 1이어야 캡처 라이브러리가 내용을 그립니다.
-        opacity: 1,      
-        
-        zIndex: -1,
-        pointerEvents: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '30px',
-        backgroundColor: '#0a0a0a',
-        color: 'white',
-        fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif',
-      }} 
-    >
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <span style={{ fontSize: '14px', fontWeight: '900', color: levelHex, letterSpacing: '0.1em' }}>
-          {t.result?.label} {trans.label}
-        </span>
-        <h2 style={{ fontSize: '38px', fontWeight: '900', marginTop: '8px', color: '#fff' }}>{trans.title}</h2>
-        <div style={{ width: '100%', height: '12px', background: '#171717', borderRadius: '999px', marginTop: '20px', position: 'relative', overflow: 'hidden', border: '1px solid #262626' }}>
-          <div style={{ position: 'absolute', left: `${markerLeft}%`, height: '100%', width: '4px', background: 'white', boxShadow: '0 0 10px white', zIndex: 10 }} />
-          <div style={{ display: 'flex', height: '100%' }}>
-            {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, background: i <= resIdx ? '#a855f7' : '#171717', borderRight: '1px solid #0a0a0a' }} />)}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ background: 'rgba(23, 23, 23, 0.5)', padding: '20px', borderRadius: '20px', border: '1px solid #262626', marginBottom: '30px', textAlign: 'left' }}>
-        <p style={{ fontSize: '16px', lineHeight: '1.6', wordBreak: 'keep-all' }}>{trans.desc}</p>
-      </div>
-
-      <div style={{ textAlign: 'left' }}>
-        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#737373', marginBottom: '15px', letterSpacing: '0.05em' }}>{t.result?.action_title}</div>
-        {top3Answers.map((ansIdx, i) => (
-          <div key={i} style={{ background: '#171717', padding: '15px', borderRadius: '15px', border: '1px solid #262626', marginBottom: '12px', display: 'flex', gap: '12px' }}>
-            <div style={{ width: '24px', height: '24px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>{i+1}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.title}</div>
-              <p style={{ fontSize: '12px', color: '#a3a3a3', lineHeight: '1.4', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '12px', opacity: 0.4 }}>dopamine-test-alpha.vercel.app</div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans flex items-center justify-center">
@@ -331,6 +182,7 @@ export default function DopamineTest() {
               <div className="px-4"><button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 border border-purple-400/30 text-xl">{t.start?.btn}</button></div>
               <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
                 <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
+                {/* 인스타그램 버튼: 이제 기본 공유 창을 띄웁니다 */}
                 <button onClick={() => shareViaWebAPI(true)} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
                 <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
                 <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
@@ -376,7 +228,8 @@ export default function DopamineTest() {
                 <p className="text-sm text-gray-400 font-bold tracking-tight">{t.result?.share_title}</p>
                 <div className="flex justify-center gap-4">
                   <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>
-                  <button onClick={shareResultAsImage} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
+                  {/* 인스타그램 버튼: 이제 기본 공유 창을 띄웁니다 */}
+                  <button onClick={() => shareViaWebAPI(true)} className="w-12 h-12 rounded-full bg-white flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Instagram_Glyph_Gradient.svg" alt="Instagram" className="w-7 h-7" /></button>
                   <button onClick={() => shareSNS('facebook')} className="w-12 h-12 rounded-full bg-[#1877F2] flex items-center justify-center active:scale-95 overflow-hidden"><img src="/icons/Facebook_Logo_Primary.png" alt="Facebook" className="w-full h-full object-cover" /></button>
                   <button onClick={() => shareSNS('twitter')} className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-neutral-800 active:scale-95"><img src="/icons/x_logo-white.png" alt="X" className="w-6 h-6 object-contain" /></button>
                   <button onClick={shareToKakao} className="w-12 h-12 rounded-full bg-[#FEE500] flex items-center justify-center active:scale-95"><img src="/icons/kakaotalk_sharing_btn_small.png" alt="Kakao" className="w-7 h-7" /></button>
@@ -390,8 +243,6 @@ export default function DopamineTest() {
         </div>
       </div>
       <Analytics />
-      {/* ✅ Portal: body 직속으로 렌더링 */}
-      {mounted && createPortal(CaptureCard, document.body)}
     </div>
   );
 }
