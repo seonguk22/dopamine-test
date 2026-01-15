@@ -2,6 +2,7 @@
 
 import { Analytics } from '@vercel/analytics/react';
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
   CheckCircle, XCircle, CheckSquare, Info, Link as LinkIcon 
@@ -59,8 +60,11 @@ export default function DopamineTest() {
   const t = useMemo(() => TRANSLATIONS[lang] || TRANSLATIONS.en, [lang]);
   const [state, dispatch] = useReducer(reducer, initialState);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const getDynamicCount = () => {
     const launchDate = new Date('2026-01-14T00:00:00').getTime(); 
@@ -146,6 +150,7 @@ export default function DopamineTest() {
       ? `${t.result?.share_msg} [${trans.title}]${t.result?.share_suffix}`
       : t.start?.title2;
     const text = encodeURIComponent(resultText);
+
     if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
     else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
     else shareViaWebAPI(true);
@@ -183,8 +188,53 @@ export default function DopamineTest() {
     const idx = state.currentQ;
     const point = QUESTIONS_META[idx]?.point ?? 0;
     if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(15);
-    setTimeout(() => { dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } }); setSelectedOption(null); }, 400);
+    setTimeout(() => {
+      dispatch({ type: ACTIONS.ANSWER, payload: { isYes, point, idx } });
+      setSelectedOption(null);
+    }, 400);
   };
+
+  // ✅ [복구] 인스타 공유용 "전체 결과 카드" (Portal을 통해 body 직속 렌더링)
+  const CaptureCard = (
+    <div 
+      ref={shareCardRef} 
+      style={{
+        position: 'fixed', left: '-10000px', top: '0px', width: '400px', 
+        backgroundColor: '#0a0a0a', opacity: 1, pointerEvents: 'none',
+        display: 'flex', flexDirection: 'column', padding: '30px', 
+        color: 'white', fontFamily: 'sans-serif', zIndex: -1
+      }} 
+    >
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <span style={{ fontSize: '14px', fontWeight: '900', color: meta.color.replace('text-', '#'), letterSpacing: '0.1em' }}>{t.result?.label} {trans.label}</span>
+        <h2 style={{ fontSize: '38px', fontWeight: '900', marginTop: '8px', color: '#fff' }}>{trans.title}</h2>
+        <div style={{ width: '100%', height: '12px', background: '#171717', borderRadius: '999px', marginTop: '20px', position: 'relative', overflow: 'hidden', border: '1px solid #262626' }}>
+          <div style={{ position: 'absolute', left: `${markerLeft}%`, height: '100%', width: '4px', background: 'white', boxShadow: '0 0 10px white', zIndex: 10 }} />
+          <div style={{ display: 'flex', height: '100%' }}>
+            {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, background: i <= resIdx ? '#a855f7' : '#171717', borderRight: '1px solid #0a0a0a' }} />)}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: 'rgba(23, 23, 23, 0.5)', padding: '20px', borderRadius: '20px', border: '1px solid #262626', marginBottom: '30px', textAlign: 'left' }}>
+        <p style={{ fontSize: '16px', lineHeight: '1.6', wordBreak: 'keep-all' }}>{trans.desc}</p>
+      </div>
+
+      <div style={{ textAlign: 'left' }}>
+        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#737373', marginBottom: '15px', letterSpacing: '0.05em' }}>{t.result?.action_title}</div>
+        {top3Answers.map((ansIdx, i) => (
+          <div key={i} style={{ background: '#171717', padding: '15px', borderRadius: '15px', border: '1px solid #262626', marginBottom: '12px', display: 'flex', gap: '12px' }}>
+            <div style={{ width: '24px', height: '24px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>{i+1}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.title}</div>
+              <p style={{ fontSize: '12px', color: '#a3a3a3', lineHeight: '1.4', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '12px', opacity: 0.4 }}>dopamine-test-alpha.vercel.app</div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans flex items-center justify-center">
@@ -228,48 +278,6 @@ export default function DopamineTest() {
 
           {state.step === 'result' && (
             <div className="text-center space-y-6 animate-in fade-in duration-500 py-4 overflow-y-auto max-h-screen no-scrollbar">
-              
-              {/* ✅ [해결] 인스타용 전체 결과 캡처 카드 (화면 밖 배치, opacity 1) */}
-              <div 
-                ref={shareCardRef} 
-                style={{
-                  position: 'fixed', left: '-10000px', top: '0px', width: '400px', 
-                  backgroundColor: '#0a0a0a', opacity: 1, pointerEvents: 'none',
-                  display: 'flex', flexDirection: 'column', padding: '30px', 
-                  color: 'white', fontFamily: 'sans-serif', zIndex: -1
-                }} 
-              >
-                <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: '900', color: '#a855f7', letterSpacing: '0.1em' }}>{t.result?.label} {trans.label}</span>
-                  <h2 style={{ fontSize: '38px', fontWeight: '900', marginTop: '8px', color: '#a855f7' }}>{trans.title}</h2>
-                  <div style={{ width: '100%', height: '12px', background: '#171717', borderRadius: '999px', marginTop: '20px', position: 'relative', overflow: 'hidden', border: '1px solid #262626' }}>
-                    <div style={{ position: 'absolute', left: `${markerLeft}%`, height: '100%', width: '4px', background: 'white', boxShadow: '0 0 10px white', zIndex: 10 }} />
-                    <div style={{ display: 'flex', height: '100%' }}>
-                      {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, background: i <= resIdx ? '#a855f7' : '#171717', borderRight: '1px solid #0a0a0a' }} />)}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(23, 23, 23, 0.5)', padding: '20px', borderRadius: '20px', border: '1px solid #262626', marginBottom: '30px', textAlign: 'left' }}>
-                  <p style={{ fontSize: '16px', lineHeight: '1.6', wordBreak: 'keep-all' }}>{trans.desc}</p>
-                </div>
-
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#737373', marginBottom: '15px', letterSpacing: '0.05em' }}>{t.result?.action_title}</div>
-                  {top3Answers.map((ansIdx, i) => (
-                    <div key={i} style={{ background: '#171717', padding: '15px', borderRadius: '15px', border: '1px solid #262626', marginBottom: '12px', display: 'flex', gap: '12px' }}>
-                      <div style={{ width: '24px', height: '24px', background: 'rgba(168, 85, 247, 0.2)', color: '#a855f7', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>{i+1}</div>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '4px', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.title}</div>
-                        <p style={{ fontSize: '12px', color: '#a3a3a3', lineHeight: '1.4', wordBreak: 'keep-all' }}>{t.questions?.[ansIdx]?.desc}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: '30px', textAlign: 'center', fontSize: '12px', opacity: 0.4 }}>dopamine-test-alpha.vercel.app</div>
-              </div>
-
-              {/* 실제 유저 화면 (기존과 동일) */}
               <div ref={resultRef} className="bg-neutral-950 rounded-3xl p-6 border border-neutral-800 relative">
                 <div className="space-y-4 text-center">
                   <span className={`text-xs font-black tracking-[0.2em] uppercase ${meta.color}`}>{t.result?.label} {trans.label}</span>
@@ -305,6 +313,8 @@ export default function DopamineTest() {
         </div>
       </div>
       <Analytics />
+      {/* ✅ Portal: body 직속으로 렌더링하여 부모 레이아웃의 Clipping 방지 */}
+      {mounted && createPortal(CaptureCard, document.body)}
     </div>
   );
 }
