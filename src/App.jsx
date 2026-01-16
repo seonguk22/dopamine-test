@@ -1,6 +1,7 @@
 'use client';
 
 import { Analytics } from '@vercel/analytics/react';
+import { track } from '@vercel/analytics';
 import React, { useEffect, useMemo, useReducer, useState, useRef } from 'react';
 import { 
   Brain, Share2, AlertTriangle, RefreshCw, Smartphone, 
@@ -236,7 +237,18 @@ export default function DopamineTest() {
                 </div>
               </div>
 
-              <a href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" target="_blank" rel="noopener noreferrer" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg"><span className="text-xs font-bold text-indigo-100">{t.result?.promo_sub}</span><span className="text-base font-bold flex items-center gap-1"><Smartphone size={18}/> {t.result?.promo_btn}</span></a>
+              <a 
+  href="https://play.google.com/store/apps/details?id=com.peo.minus.habitoff" 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  onClick={() => track('minus_app_click')} // ✅ 클릭 시 'minus_app_click' 이벤트를 Vercel로 전송
+  className="w-full bg-indigo-600 py-4 rounded-xl flex flex-col items-center gap-1 active:scale-95 text-white shadow-lg"
+>
+  <span className="text-xs font-bold opacity-80">더 강력한 해결책이 필요하다면?</span>
+  <span className="text-sm font-bold flex items-center gap-1">
+    <Smartphone size={16}/> MINUS 앱 시작하기
+  </span>
+</a>
               <button onClick={() => dispatch({ type: ACTIONS.RESET })} className="w-full bg-neutral-800 hover:bg-neutral-700 text-gray-300 py-4 rounded-2xl text-base font-bold flex items-center justify-center gap-2 mt-3 active:scale-95"><RefreshCw size={18} /> {t.result?.retry || "Retry"}</button>
             </div>
           )}
