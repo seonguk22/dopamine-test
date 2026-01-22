@@ -179,7 +179,7 @@ export default function DopamineTest() {
                 <h1 className="text-3xl font-extrabold leading-tight text-white tracking-tight">{t.start?.title1}<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">{t.start?.title2}</span></h1>
                 <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-wrap px-4">{t.start?.desc}</p>
               </div>
-              <div className="pt-2"><p className="text-emerald-400 text-[13px] font-bold animate-pulse">현재 총 <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}명</span>이 참여했습니다.</p></div>
+              <div className="pt-2"><p className="text-emerald-400 text-[13px] font-bold animate-pulse">{t.start?.count_prefix} <span className="underline decoration-2 underline-offset-4">{participantCount.toLocaleString()}</span>{t.start?.count_suffix}</p></div>
               <div className="px-4"><button onClick={() => dispatch({ type: ACTIONS.START })} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-5 rounded-2xl shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 border border-purple-400/30 text-xl">{t.start?.btn}</button></div>
               <div className="flex justify-center gap-3 pt-8 pb-2 opacity-90">
                 <button onClick={copyLink} className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 active:scale-95"><LinkIcon size={20} className="text-gray-300"/></button>

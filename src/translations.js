@@ -6,7 +6,9 @@ export const TRANSLATIONS = {
       title2: "도파민 중독 테스트", 
       desc: "숏폼, 충동구매, 뇌 과부하... 당신의 도파민 중독 지수를 1분 만에 확인해 보세요.", 
       btn: "테스트 시작하기", 
-      tags: ["1분 소요", "익명 검사", "즉시 결과 확인"] 
+      tags: ["1분 소요", "익명 검사", "즉시 결과 확인"],
+      count_prefix: "현재 총", 
+      count_suffix: "명이 참여했습니다."
     },
     quiz: { yes: "그렇다", no: "아니다", q_prefix: "질문" },
     loading: { 
@@ -18,7 +20,7 @@ export const TRANSLATIONS = {
       action_title: "중독 탈출을 위한 액션 플랜 3", 
       share_title: "✨ 친구들에게 결과 공유하기", 
       share_msg: "내 도파민 중독 레벨은", 
-      share_suffix: "! 당신의 상태도 점검해보세요.", 
+      share_suffix: "! 당신의 중독 지수도 진단해보세요.", 
       disclaimer: "이 테스트는 자기 점검용이며 의학적 진단이 아닙니다.", 
       promo_sub: "더 강력한 해결책이 필요하다면?", 
       promo_btn: "MINUS 앱으로 중독 끊기", 
@@ -54,7 +56,9 @@ export const TRANSLATIONS = {
       title2: "Dopamine Addiction Test", 
       desc: "Check your dopamine addiction level and reclaim your focus in 1 minute.", 
       btn: "Start Assessment", 
-      tags: ["1 min", "Anonymous", "Instant Result"] 
+      tags: ["1 min", "Anonymous", "Instant Result"],
+      count_prefix: "Total", 
+      count_suffix: "people joined."
     },
     quiz: { yes: "Yes", no: "No", q_prefix: "Question" },
     loading: { 
@@ -96,7 +100,16 @@ export const TRANSLATIONS = {
     ]
   },
   ja: {
-    start: { sub: "1分診断", title1: "依存度は？", title2: "習慣チェックテスト", desc: "日常を邪魔するパターンを1分でチェックしましょう。", btn: "診断を始める", tags: ["1分で完了", "収集なし", "即時診断"] },
+    start: { 
+      sub: "1分診断", 
+      title1: "依存度は？", 
+      title2: "習慣チェックテスト", 
+      desc: "日常を邪魔するパターンを1分でチェックしましょう。", 
+      btn: "診断を始める", 
+      tags: ["1分で完了", "収集なし", "即時診断"],
+      count_prefix: "現在、計", 
+      count_suffix: "人が参加しました。"
+    },
     quiz: { yes: "はい", no: "いいえ", q_prefix: "質問" },
     loading: { title: "パターン分析中...", desc: "あなたのデジタル習慣を特定しています。" },
     result: { label: "感受性", action_title: "今日から実践すべき3つの行動", share_title: "✨ 友達に結果を共有する", share_msg: "私のドーパミン診断結果は", share_suffix: "！ あなたのパターンもチェックしてみてください。", disclaimer: "この診断は自己チェック用です。", promo_sub: "もっと強力な対策が必要なら？", promo_btn: "MINUSアプリを試す", retry: "やり直す", share: "結果を共有" },
@@ -123,7 +136,16 @@ export const TRANSLATIONS = {
     ]
   },
   de: {
-    start: { sub: "1-Min-Check", title1: "Dopamin-Muster?", title2: "Gewohnheits-Test", desc: "Überprüfe deinen Fokus in nur 1 Minute.", btn: "Starten", tags: ["1 Min.", "Kein Tracking", "Ergebnis"] },
+    start: { 
+      sub: "1-Min-Check", 
+      title1: "Dopamin-Muster?", 
+      title2: "Gewohnheits-Test", 
+      desc: "Überprüfe deinen Fokus in nur 1 Minute.", 
+      btn: "Starten", 
+      tags: ["1 Min.", "Kein Tracking", "Ergebnis"],
+      count_prefix: "Insgesamt", 
+      count_suffix: "Personen teilgenommen."
+    },
     quiz: { yes: "Ja", no: "Nein", q_prefix: "Frage" },
     loading: { title: "Wird analysiert...", desc: "Identifiziere deine digitalen Gewohnheiten." },
     result: { label: "Sensibilität", action_title: "3 Pläne für heute", share_title: "✨ Ergebnis mit Freunden teilen", share_msg: "Mein Dopamin-Ergebnis:", share_suffix: "! Teste auch dein Muster.", disclaimer: "Nur zur Selbsteinschätzung.", promo_sub: "Stärkere Lösung?", promo_btn: "MINUS App", retry: "Wiederholen", share: "Teilen" },
@@ -150,7 +172,16 @@ export const TRANSLATIONS = {
     ]
   },
   es: {
-    start: { sub: "Test de 1 min", title1: "¿Tu patrón?", title2: "Test de hábitos", desc: "Analiza tu enfoque en 1 min.", btn: "Iniciar", tags: ["1 min", "Sin rastreo", "Resultado"] },
+    start: { 
+      sub: "Test de 1 min", 
+      title1: "¿Tu patrón?", 
+      title2: "Test de hábitos", 
+      desc: "Analiza tu enfoque en 1 min.", 
+      btn: "Iniciar", 
+      tags: ["1 min", "Sin rastreo", "Resultado"],
+      count_prefix: "Total", 
+      count_suffix: "personas participaron."
+    },
     quiz: { yes: "Sí", no: "No", q_prefix: "Pregunta" },
     loading: { title: "Analizando...", desc: "Identificando tus bucles." },
     result: { label: "Sensibilidad", action_title: "3 planes para hoy", share_title: "✨ Comparte el resultado con amigos", share_msg: "Mi resultado de dopamina:", share_suffix: "! ¡Prueba el tuyo también!", disclaimer: "Solo autoevaluación.", promo_sub: "¿Buscas algo más fuerte?", promo_btn: "App MINUS", retry: "Reintentar", share: "Compartir" },
@@ -177,7 +208,16 @@ export const TRANSLATIONS = {
     ]
   },
   fr: {
-    start: { sub: "Test de 1 min", title1: "Votre profil ?", title2: "Test d'habitudes", desc: "Vérifiez votre concentration en 1 min.", btn: "Démarrer", tags: ["1 min", "Anonyme", "Résultat"] },
+    start: { 
+      sub: "Test de 1 min", 
+      title1: "Votre profil ?", 
+      title2: "Test d'habitudes", 
+      desc: "Vérifiez votre concentration en 1 min.", 
+      btn: "Démarrer", 
+      tags: ["1 min", "Anonyme", "Résultat"],
+      count_prefix: "Total", 
+      count_suffix: "personnes ont participé."
+    },
     quiz: { yes: "Oui", no: "Non", q_prefix: "Question" },
     loading: { title: "Analyse...", desc: "Identification de vos habitudes." },
     result: { label: "Sensibilité", action_title: "3 actions aujourd'hui", share_title: "✨ Partager avec vos amis", share_msg: "Mon résultat dopamine :", share_suffix: "! Testez le vôtre aussi.", disclaimer: "Auto-évaluation uniquement.", promo_sub: "Solution plus forte ?", promo_btn: "App MINUS", retry: "Réessayer", share: "Partager" },
@@ -204,10 +244,19 @@ export const TRANSLATIONS = {
     ]
   },
   pt: {
-    result: { label: "Sensibilidade", action_title: "3 ações para hoje", share_title: "✨ Partilhar com amigos", share_msg: "Meu resultado de dopamina:", share_suffix: "! Teste o seu também.", disclaimer: "Apenas autoavaliação.", promo_sub: "Algo mais forte?", promo_btn: "App MINUS", retry: "Repetir", share: "Partilhar" },
-    start: { sub: "Teste 1 min", title1: "¿Padrão?", title2: "Teste de hábitos", desc: "Veja seu foco em 1 min.", btn: "Iniciar", tags: ["1 min", "Sem dados", "Resultado"] },
+    start: { 
+      sub: "Teste 1 min", 
+      title1: "¿Padrão?", 
+      title2: "Teste de hábitos", 
+      desc: "Veja seu foco em 1 min.", 
+      btn: "Iniciar", 
+      tags: ["1 min", "Sem dados", "Resultado"],
+      count_prefix: "Total", 
+      count_suffix: "pessoas participaram."
+    },
     quiz: { yes: "Sim", no: "Não", q_prefix: "Pergunta" },
     loading: { title: "Analisando...", desc: "Identificando seus ciclos." },
+    result: { label: "Sensibilidade", action_title: "3 ações para hoje", share_title: "✨ Partilhar com amigos", share_msg: "Meu resultado de dopamina:", share_suffix: "! Teste o seu também.", disclaimer: "Apenas autoavaliação.", promo_sub: "Algo mais forte?", promo_btn: "App MINUS", retry: "Repetir", share: "Partilhar" },
     questions: [
       { q: "Checou celular logo após acordar?", cat: "Sono", title: "10 min sem celular", desc: "Comece com água." },
       { q: "Parou tarefas para ver notificações?", cat: "Foco", title: "Apenas alertas críticos", desc: "Mantenha o essencial." },
@@ -231,10 +280,19 @@ export const TRANSLATIONS = {
     ]
   },
   id: {
-    result: { label: "Sensitivitas", action_title: "3 Rencana Hari Ini", share_title: "✨ Bagikan ke teman", share_msg: "Hasil Dopamin saya:", share_suffix: "! Cek polamu juga.", disclaimer: "Hanya penilaian diri.", promo_sub: "Butuh yang lebih kuat?", promo_btn: "App MINUS", retry: "Coba Lagi", share: "Bagikan" },
-    start: { sub: "Tes 1 Menit", title1: "Pola Anda?", title2: "Tes Kebiasaan", desc: "Cek fokus Anda dalam 1 menit.", btn: "Mulai", tags: ["1 menit", "Tanpa data", "Instan"] },
+    start: { 
+      sub: "Tes 1 Menit", 
+      title1: "Pola Anda?", 
+      title2: "Tes Kebiasaan", 
+      desc: "Cek fokus Anda dalam 1 menit.", 
+      btn: "Mulai", 
+      tags: ["1 menit", "Tanpa data", "Instan"],
+      count_prefix: "Total", 
+      count_suffix: "orang berpartisipasi."
+    },
     quiz: { yes: "Ya", no: "Tidak", q_prefix: "Pertanyaan" },
     loading: { title: "Menganalisis...", desc: "Mencari pola digital Anda." },
+    result: { label: "Sensitivitas", action_title: "3 Rencana Hari Ini", share_title: "✨ Bagikan ke teman", share_msg: "Hasil Dopamin saya:", share_suffix: "! Cek polamu juga.", disclaimer: "Hanya penilaian diri.", promo_sub: "Butuh yang lebih kuat?", promo_btn: "App MINUS", retry: "Coba Lagi", share: "Bagikan" },
     questions: [
       { q: "Cek HP dalam 5 menit setelah bangun?", cat: "Tidur", title: "10 Menit Tanpa HP", desc: "Mulai dengan air." },
       { q: "Cek notif saat sedang bekerja?", cat: "Fokus", title: "Notif Penting Saja", desc: "Aktifkan peringatan darurat." },
@@ -258,10 +316,19 @@ export const TRANSLATIONS = {
     ]
   },
   hi: {
-    result: { label: "संवेदनशीलता", action_title: "3 एक्शन प्लान", share_title: "✨ दोस्तों के साथ साझा करें", share_msg: "मेरा डोपामीन परिणाम:", share_suffix: "! आप भी अपना पैटर्न चेक करें।", disclaimer: "केवल आत्म-मूल्यांकन के लिए.", promo_sub: "ठोस समाधान चाहिए?", promo_btn: "MINUS ऐप", retry: "फिर से", share: "शेयर" },
-    start: { sub: "1 मिनट टेस्ट", title1: "पैटर्न?", title2: "आदत टेस्ट", desc: "1 मिनट में फोकस चेक करें.", btn: "शुरू करें", tags: ["1 मिनट", "कोई डेटा नहीं", "तुरंत"] },
+    start: { 
+      sub: "1 मिनट टेस्ट", 
+      title1: "पैटर्न?", 
+      title2: "आदत टेस्ट", 
+      desc: "1 मिनट में फोकस चेक करें.", 
+      btn: "शुरू करें", 
+      tags: ["1 मिनट", "कोई डेटा नहीं", "तुरंत"],
+      count_prefix: "कुल", 
+      count_suffix: "लोगों ने भाग लिया।"
+    },
     quiz: { yes: "हाँ", no: "नहीं", q_prefix: "प्रश्न" },
     loading: { title: "विश्लेषण...", desc: "आदतों की पहचान हो रही है." },
+    result: { label: "संवेदनशीलता", action_title: "3 एक्शन प्लान", share_title: "✨ दोस्तों के साथ साझा करें", share_msg: "मेरा डोपामीन परिणाम:", share_suffix: "! आप भी अपना पैटर्न चेक करें।", disclaimer: "केवल आत्म-मूल्यांकन के लिए.", promo_sub: "ठोस समाधान चाहिए?", promo_btn: "MINUS ऐप", retry: "फिर से", share: "शेयर" },
     questions: [
       { q: "जागने के 5 मिनट के भीतर फोन देखा?", cat: "नींद", title: "10 मिनट फोन-मुक्त", desc: "पानी से शुरुआत करें." },
       { q: "काम रोककर नोटिफिकेशन देखा?", cat: "फोकस", title: "जरूरी अलर्ट ही", desc: "अलर्ट कम रखें." },
@@ -285,10 +352,19 @@ export const TRANSLATIONS = {
     ]
   },
   it: {
-    result: { label: "Sensibilità", action_title: "3 piani per oggi", share_title: "✨ Condividi con gli amici", share_msg: "Il mio risultato dopamina:", share_suffix: "! Controlla anche il tuo.", disclaimer: "Solo autovalutazione.", promo_sub: "Soluzione più forte?", promo_btn: "App MINUS", retry: "Riprova", share: "Condividi" },
-    start: { sub: "Test di 1 min", title1: "Profilo?", title2: "Test abitudini", desc: "Verifica il tuo focus in 1 min.", btn: "Inizia", tags: ["1 min", "Nessun dato", "Risultato"] },
+    start: { 
+      sub: "Test di 1 min", 
+      title1: "Profilo?", 
+      title2: "Test abitudini", 
+      desc: "Verifica il tuo focus in 1 min.", 
+      btn: "Inizia", 
+      tags: ["1 min", "Nessun dato", "Risultato"],
+      count_prefix: "Totale", 
+      count_suffix: "persone hanno partecipato."
+    },
     quiz: { yes: "Sì", no: "No", q_prefix: "Domanda" },
     loading: { title: "Analisi...", desc: "Identificazione abitudini." },
+    result: { label: "Sensibilità", action_title: "3 piani per oggi", share_title: "✨ Condividi con gli amici", share_msg: "Il mio risultato dopamina:", share_suffix: "! Controlla anche il tuo.", disclaimer: "Solo autovalutazione.", promo_sub: "Soluzione più forte?", promo_btn: "App MINUS", retry: "Riprova", share: "Condividi" },
     questions: [
       { q: "Controllato tel al risveglio?", cat: "Sonno", title: "10 min senza tel", desc: "Inizia con acqua." },
       { q: "Interrotto compiti per notifs?", cat: "Focus", title: "Solo critiche", desc: "Tieni l'essenziale." },
