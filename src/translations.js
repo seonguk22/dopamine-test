@@ -1,9 +1,30 @@
 export const TRANSLATIONS = {
   ko: {
-    start: { sub: "1분 자가 점검", title1: "내 도파민 패턴은?", title2: "도파민 습관 테스트", desc: "숏폼, 충동구매, 미루기... 일상을 방해하는 패턴을 1분 만에 점검해 보세요.", btn: "테스트 시작하기", tags: ["1분 소요", "개인정보 수집 없음", "결과 바로 확인"] },
+    start: { 
+      sub: "1분 정밀 검사", 
+      title1: "나는 도파민 중독일까?", 
+      title2: "도파민 중독 테스트", 
+      desc: "숏폼, 충동구매, 뇌 과부하... 당신의 도파민 중독 지수를 1분 만에 확인해 보세요.", 
+      btn: "테스트 시작하기", 
+      tags: ["1분 소요", "익명 검사", "즉시 결과 확인"] 
+    },
     quiz: { yes: "그렇다", no: "아니다", q_prefix: "질문" },
-    loading: { title: "패턴을 분석 중...", desc: "당신의 습관 패턴을 정밀하게 확인하고 있어요." },
-    result: { label: "자극 민감도", action_title: "바로 실행할 행동 3가지", share_title: "✨ 친구들에게 결과 공유하기", share_msg: "내 도파민 결과는", share_suffix: "! 당신의 패턴도 확인해보세요.", disclaimer: "이 테스트는 자기 점검용이며 의학적 진단이 아닙니다.", promo_sub: "더 강력한 해결책이 필요하다면?", promo_btn: "MINUS 앱 시작하기", retry: "다시하기", share: "결과 공유" },
+    loading: { 
+      title: "중독 수치를 분석 중...", 
+      desc: "뇌의 자극 민감도와 중독 루프를 정밀하게 확인하고 있어요." 
+    },
+    result: { 
+      label: "도파민 중독 지수", 
+      action_title: "중독 탈출을 위한 액션 플랜 3", 
+      share_title: "✨ 친구들에게 결과 공유하기", 
+      share_msg: "내 도파민 중독 레벨은", 
+      share_suffix: "! 당신의 상태도 점검해보세요.", 
+      disclaimer: "이 테스트는 자기 점검용이며 의학적 진단이 아닙니다.", 
+      promo_sub: "더 강력한 해결책이 필요하다면?", 
+      promo_btn: "MINUS 앱으로 중독 끊기", 
+      retry: "다시하기", 
+      share: "결과 공유" 
+    },
     questions: [
       { q: "최근 2주 동안, 기상 후 5분 안에 스마트폰을 확인한 적이 있다.", cat: "수면/기상", title: "기상 후 10분 무폰", desc: "알람 끄자마자 앱을 열기 대신, 물 한 잔으로 시작해보세요." },
       { q: "최근 2주 동안, 알림이 오면 하던 일을 멈추고 바로 확인한 적이 있다.", cat: "집중력", title: "알림은 필수만", desc: "알림이 많을수록 집중이 잘게 쪼개져요. 꼭 필요한 것만 남기세요." },
@@ -19,18 +40,39 @@ export const TRANSLATIONS = {
       { q: "최근 2주 동안, 이동/대기 시간에 폰 없이 가만히 있는 게 힘들다고 느낀 적이 있다.", cat: "뇌 휴식", title: "심심함 연습하기", desc: "하루 5분만 폰 없이 가만히 앉아 자극을 찾는 습관을 줄여보세요." }
     ],
     levels: [
-      { title: "도파민 청정 구역 🟦", label: "매우 낮음", desc: "자극에 크게 휘둘리지 않고 본인만의 리듬을 잘 유지하고 계시네요." },
-      { title: "안정적인 몰입형 🟩", label: "낮음", desc: "전반적으로 균형이 잘 잡혀 있습니다. 컨디션 관리에만 신경 써주세요." },
-      { title: "도파민 주의보 🟨", label: "주의", desc: "집중력이 자주 끊기고 무의식적으로 폰을 찾는 횟수가 늘고 있습니다." },
-      { title: "자극 과다 구간 🟧", label: "높음", desc: "즉각적인 보상에 뇌가 많이 익숙해져 있어요. 의도적인 디톡스가 필요합니다." },
-      { title: "환경 조정 필수 🟥", label: "매우 높음", desc: "강한 자극에 대한 갈망이 커져 있어 의지만으로는 조절이 어려울 수 있습니다." }
+      { title: "도파민 청정 상태 🟦", label: "매우 낮음", desc: "자극에 휘둘리지 않고 뇌의 건강한 리듬을 유지하고 있습니다." },
+      { title: "안정적 몰입 상태 🟩", label: "낮음", desc: "전반적으로 양호합니다. 가끔의 디지털 디톡스면 충분합니다." },
+      { title: "중독 초기 단계 🟨", label: "주의", desc: "무의식적인 폰 사용이 늘고 있습니다. 지금 조절하지 않으면 위험합니다." },
+      { title: "심각한 중독 구간 🟧", label: "높음", desc: "뇌가 강한 자극에만 반응합니다. 즉시 의도적인 디톡스가 필요합니다." },
+      { title: "위험: 뇌 과부하 🟥", label: "매우 높음", desc: "도파민 수용체가 무뎌진 상태입니다. 전문가 수준의 환경 통제가 필수적입니다." }
     ]
   },
   en: {
-    start: { sub: "1-min Assessment", title1: "Your Dopamine Pattern?", title2: "Dopamine Habit Test", desc: "Check your focus patterns in just 1 minute.", btn: "Start Test", tags: ["1 min", "No data collection", "Instant result"] },
+    start: { 
+      sub: "1-min Clinical Check", 
+      title1: "Are you addicted?", 
+      title2: "Dopamine Addiction Test", 
+      desc: "Check your dopamine addiction level and reclaim your focus in 1 minute.", 
+      btn: "Start Assessment", 
+      tags: ["1 min", "Anonymous", "Instant Result"] 
+    },
     quiz: { yes: "Yes", no: "No", q_prefix: "Question" },
-    loading: { title: "Analyzing patterns...", desc: "Identifying your digital habit loops." },
-    result: { label: "Sensitivity", action_title: "3 Action Plans for Today", share_title: "✨ Share with friends", share_msg: "My Dopamine Result:", share_suffix: "! Check yours now.", disclaimer: "Self-assessment only.", promo_sub: "Need a more powerful solution?", promo_btn: "Start MINUS App", retry: "Retry", share: "Share Result" },
+    loading: { 
+      title: "Analyzing addiction level...", 
+      desc: "Identifying your digital addiction loops." 
+    },
+    result: { 
+      label: "Addiction Index", 
+      action_title: "3 Action Plans to Break the Loop", 
+      share_title: "✨ Share with friends", 
+      share_msg: "My Addiction Level:", 
+      share_suffix: "! Check yours now.", 
+      disclaimer: "Self-assessment only.", 
+      promo_sub: "Need a more powerful solution?", 
+      promo_btn: "Start MINUS App", 
+      retry: "Retry", 
+      share: "Share Result" 
+    },
     questions: [
       { q: "In the past 2 weeks, checked phone within 5 mins of waking up?", cat: "Sleep", title: "10-min Phone-free Wakeup", desc: "Start with water instead of apps." },
       { q: "In the past 2 weeks, stopped tasks to check notifications?", cat: "Focus", title: "Essential Alerts Only", desc: "Keep only critical alerts to maintain focus." },
@@ -48,7 +90,7 @@ export const TRANSLATIONS = {
     levels: [
       { title: "Clean Zone 🟦", label: "Very Low", desc: "You maintain a healthy rhythm without being swayed." },
       { title: "Stable Focus 🟩", label: "Low", desc: "Well-balanced. Just keep an eye on your fatigue." },
-      { title: "Dopamine Alert 🟨", label: "Warning", desc: "Unconscious phone usage is increasing. Time to adjust." },
+      { title: "Addiction Alert 🟨", label: "Warning", desc: "Unconscious phone usage is increasing. Time to adjust." },
       { title: "Over-Stimulated 🟧", label: "High", desc: "Brain is used to instant rewards. Needs detox." },
       { title: "Reset Required 🟥", label: "Very High", desc: "Willpower isn't enough. You need app-blocking." }
     ]
@@ -263,7 +305,7 @@ export const TRANSLATIONS = {
     ],
     levels: [
       { title: "Zona Pulita 🟦", label: "Molto bassa", desc: "Mantieni un ritmo sano." },
-      { title: "Focus Stabile 🟩", label: "Bassa", desc: "Equilibrato." },
+      { title: "Focus Stabile 🟩", label: "Bassa", desc: "Equilibrado." },
       { title: "Allerta 🟨", label: "Avviso", desc: "Controlli senza accorgerti." },
       { title: "Sovrastimolato 🟧", label: "Alta", desc: "Serve detox." },
       { title: "Reset 🟥", label: "Molto alta", desc: "Blocca le app." }
